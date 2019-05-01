@@ -1,0 +1,5 @@
+<launch>
+
+  <node pkg="autoware_connector" type="can_odometry" name="can_odometry" output="log" />
+
+</launch>
