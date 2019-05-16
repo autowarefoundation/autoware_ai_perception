@@ -36,6 +36,7 @@ LidarFakePerception::LidarFakePerception() : nh_(), private_nh_("~")
 
   fake_object_id_ = 0;      // overwritten by real object ids
   global_frame_ = "world";  // overwritten by object initial pose
+  pointcloud_frame_ = "velodyne"; // overwritten by pointcloud data
 
   fake_object_pose_initialized_ = false;
 }
@@ -75,6 +76,7 @@ void LidarFakePerception::objectsCallback(const autoware_msgs::DetectedObjectArr
 void LidarFakePerception::pointsCallback(const sensor_msgs::PointCloud2& msg)
 {
   pcl::fromROSMsg(msg, real_points_);
+  pointcloud_frame_ = msg.header.frame_id;
 }
 
 void LidarFakePerception::twistCallback(const geometry_msgs::Twist& msg)
@@ -230,6 +232,7 @@ void LidarFakePerception::publishFakes()
 
   if (fake_points_.size() != 0)  // publish empty
   {
+    fake_points_.header.frame_id = pointcloud_frame_;
     fake_points_.header = pcl_conversions::toPCL(fake_object_.header);
   }
 

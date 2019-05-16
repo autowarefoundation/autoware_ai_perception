@@ -79,6 +79,7 @@ private:
   bool fake_object_pose_initialized_;
   ros::Time fake_object_initial_time_;
   std::string global_frame_;
+  std::string pointcloud_frame_;
   tf::Transform fake_object_pose_;  // global
   geometry_msgs::Twist fake_object_twist_;
   autoware_msgs::DetectedObject fake_object_;
