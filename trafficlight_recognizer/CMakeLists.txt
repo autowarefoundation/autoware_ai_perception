@@ -25,7 +25,6 @@ find_package(catkin REQUIRED COMPONENTS
         tf
         vector_map_server
         visualization_msgs
-        waypoint_follower
         autoware_msgs
         vector_map
         )
@@ -80,7 +79,6 @@ catkin_package(
         vector_map
         vector_map_server
         visualization_msgs
-        waypoint_follower
 
         LIBRARIES libcontext
 )
