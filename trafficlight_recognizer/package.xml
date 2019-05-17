@@ -13,7 +13,6 @@
     <build_depend>autoware_msgs</build_depend>
     <build_depend>vector_map_server</build_depend>
     <build_depend>geometry_msgs</build_depend>
-    <build_depend>waypoint_follower</build_depend>
     <build_depend>qtbase5-dev</build_depend>
     <build_depend>cv_bridge</build_depend>
     <build_depend>eigen</build_depend>
@@ -31,7 +30,6 @@
     <run_depend>autoware_msgs</run_depend>
     <run_depend>vector_map_server</run_depend>
     <run_depend>geometry_msgs</run_depend>
-    <run_depend>waypoint_follower</run_depend>
     <run_depend>libqt5-core</run_depend>
     <run_depend>libqt5-gui</run_depend>
     <run_depend>libqt5-widgets</run_depend>
