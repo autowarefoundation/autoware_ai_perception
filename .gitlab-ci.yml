@@ -18,7 +18,7 @@ variables:
     # Update setuptools from PyPI because the version Ubuntu ships with is too old
     - pip3 install -U setuptools
     - rosdep update
-    - wget https://raw.githubusercontent.com/autowarefoundation/autoware/master/docker/generic/dependencies
+    - wget https://raw.githubusercontent.com/autowarefoundation/autoware/master/docker/dependencies
     - sed -i "s/\$ROS_DISTRO/$ROS_DISTRO/g" "dependencies" && cat dependencies | xargs apt-get install -y    
 
 build_kinetic:
