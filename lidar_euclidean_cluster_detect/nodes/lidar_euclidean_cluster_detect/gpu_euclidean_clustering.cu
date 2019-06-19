@@ -210,6 +210,9 @@ buildClusterMatrix(float *x, float *y, float *z, int *cluster_indices, int *clus
   __shared__ float local_y[BLOCK_SIZE_X];
   __shared__ float local_z[BLOCK_SIZE_X];
 
+  if (index>size)
+    return;
+
   for (int column = index; column < size; column += stride)
   {
     local_x[threadIdx.x] = x[column];
@@ -228,11 +231,10 @@ buildClusterMatrix(float *x, float *y, float *z, int *cluster_indices, int *clus
       int row_cluster = cluster_indices[row];
       int rc_offset = cluster_offset[row_cluster];
 
-      __syncthreads();
-
       if (row_cluster != column_cluster && norm3df(tmp_x, tmp_y, tmp_z) < threshold)
         cluster_matrix[rc_offset * cluster_num + cc_offset] = 1;
     }
+    __syncthreads();
   }
 }
 
