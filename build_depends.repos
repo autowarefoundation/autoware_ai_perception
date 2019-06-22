@@ -1,0 +1,13 @@
+repositories:
+  common:
+    type: git
+    url: https://gitlab.com/autowarefoundation/autoware.ai/common.git
+    version: master
+  messages:
+    type: git
+    url: https://gitlab.com/autowarefoundation/autoware.ai/messages.git
+    version: master
+  utilities:
+    type: git
+    url: https://gitlab.com/autowarefoundation/autoware.ai/utilities.git
+    version: master
