@@ -5,6 +5,10 @@
   <arg name="predict_frequency" default="50.0"/>
   <arg name="tf_rate" default="10.0"/>
   <arg name="extend_state_step" default="50"/>
+  <arg name="input_twist_name" default="/can_twist"/>
+  <arg name="input_pose_name" default="/ndt_pose"/>
+  <arg name="input_pose_with_cov_name" default="/ndt_pose_with_covariance"/>
+
 
   <!-- for Pose measurement -->
   <arg name="use_pose_with_covariance" default="false"/>
@@ -33,8 +37,9 @@
   <node pkg="ekf_localizer" type="ekf_localizer" name="ekf_localizer" output="screen">
 
     <param name="pose_frame_id" value="/map"/>
-    <param name="input_pose_name" value="/ndt_pose"/>
-    <param name="input_twist_name" value="/can_twist"/>
+    <param name="input_pose_name" value="$(arg input_pose_name)"/>
+    <param name="input_pose_with_cov_name" value="$(arg input_pose_with_cov_name)"/>
+    <param name="input_twist_name" value="$(arg input_twist_name)"/>
     <param name="output_pose_name" value="/ekf_pose"/>
     <param name="output_pose_with_covariance_name" value="/ekf_pose_with_covariance"/>
     <param name="output_twist_name" value="/ekf_twist"/>
