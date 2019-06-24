@@ -24,7 +24,6 @@ VehicleStatusConverter::VehicleStatusConverter() : nh_(""), pnh_("~")
   sub_estimate_twist_ = nh_.subscribe("/estimate_twist", 1, &VehicleStatusConverter::callbackEstimateTwist, this);
 
   pnh_.param("wheelbase", wheelbase_, double(2.9));
-  pnh_.param("steering_gear_ratio", steering_gear_ratio_, double(15.0));
   pnh_.param("enable_adaptive_estimate", enable_adaptive_estimate_, bool(false));
 
   if (wheelbase_ < 1.0E-5)
@@ -32,12 +31,7 @@ VehicleStatusConverter::VehicleStatusConverter() : nh_(""), pnh_("~")
     ROS_WARN("undesired wheelbase value : %f, set to 1.0", wheelbase_);
     wheelbase_ = 1.0;
   }
-  if (steering_gear_ratio_ < 1.0E-5)
-  {
-    ROS_WARN("undesired steering_gear_ratio value : %f, set to 1.0", steering_gear_ratio_);
-    steering_gear_ratio_ = 1.0;
-  }
-  ROS_INFO("set as\n * wheelbase: %f\n * steering_gear_ratio: %f", wheelbase_, steering_gear_ratio_);
+  ROS_INFO("set as\n * wheelbase: %f", wheelbase_);
 
   adaptive_coefficient_wz_ = 1.0; // adaptive coefficient for angular velocity calculaton
   adaptive_coefficient_vx_ = 1.0; // adaptive coefficient for angular velocity calculaton
@@ -51,10 +45,9 @@ VehicleStatusConverter::~VehicleStatusConverter(){};
 void VehicleStatusConverter::callbackVehicleStatus(const autoware_msgs::VehicleStatus &msg)
 {
   static const double KMPH2MPS = 1000.0 / 3600.0;
-  static const double DEG2RAD = 3.141592 / 180.0;
   current_vehicle_status_ = msg;
-  const double vel_mps = msg.speed * KMPH2MPS;                         // convert from [km/h] to [m/s]
-  const double steer_rad = msg.angle / steering_gear_ratio_ * DEG2RAD; // convert handle angle [deg] to tire angle [rad]
+  const double vel_mps = msg.speed * KMPH2MPS; // convert from [km/h] to [m/s]
+  const double steer_rad = msg.angle;          // tire angle [rad]
 
   geometry_msgs::TwistStamped twist_stamped;
   twist_stamped.header.stamp = msg.header.stamp;
@@ -72,9 +65,8 @@ void VehicleStatusConverter::callbackVehicleStatus(const autoware_msgs::VehicleS
 void VehicleStatusConverter::callbackEstimateTwist(const geometry_msgs::TwistStamped &estimate_twist)
 {
   static const double KMPH2MPS = 1000.0 / 3600.0;
-  static const double DEG2RAD = 3.141592 / 180.0;
   const double vel_mps = current_vehicle_status_.speed * KMPH2MPS;
-  const double steer_rad = current_vehicle_status_.angle / steering_gear_ratio_ * DEG2RAD;
+  const double steer_rad = current_vehicle_status_.angle;
 
   if (vel_mps > 1.0) // update only when estimate angular vel is reliable enough
   {
