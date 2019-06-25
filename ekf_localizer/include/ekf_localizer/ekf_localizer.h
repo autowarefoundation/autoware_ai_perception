@@ -31,8 +31,6 @@
 #include <tf2_ros/transform_listener.h>
 #include <tf2_ros/transform_broadcaster.h>
 
-#include <autoware_msgs/VehicleStatus.h>
-
 #include "amathutils_lib/kalman_filter.hpp"
 #include "amathutils_lib/time_delay_kalman_filter.hpp"
 
