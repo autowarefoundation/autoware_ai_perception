@@ -245,6 +245,13 @@ void publishCloudClusters(const ros::Publisher *in_publisher, const autoware_msg
         cluster_transformed.dimensions = i->dimensions;
         cluster_transformed.eigen_values = i->eigen_values;
         cluster_transformed.eigen_vectors = i->eigen_vectors;
+        
+        cluster_transformed.convex_hull = i->convex_hull;
+        cluster_transformed.bounding_box.pose.position = i->bounding_box.pose.position;
+        if(_pose_estimation)
+        {
+          cluster_transformed.bounding_box.pose.orientation = i->bounding_box.pose.orientation;
+        }
 
         clusters_transformed.clusters.push_back(cluster_transformed);
       }
