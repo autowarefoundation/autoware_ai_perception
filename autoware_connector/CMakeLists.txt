@@ -21,6 +21,7 @@ catkin_package(
 include_directories(
         ${catkin_INCLUDE_DIRS}
         ${autoware_msgs_INCLUDE_DIRS}
+        include
 )
 
 add_executable(can_status_translator
