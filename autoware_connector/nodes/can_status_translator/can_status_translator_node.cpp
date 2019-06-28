@@ -19,7 +19,7 @@
 
 #include "can_status_translator_core.h"
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
   ros::init(argc, argv, "can_status_translator");
   autoware_connector::CanStatusTranslatorNode n;

@@ -33,7 +33,7 @@ void CanStatusTranslatorNode::initForROS()
 {
   // ros parameter settings
   if (!nh_.hasParam("/vehicle_info/wheel_base") || !nh_.hasParam("/vehicle_info/minimum_turning_radius") ||
-      !nh_.hasParam("/vehicle_info/maximum_steering_angle"))
+      !nh_.hasParam("/vehicle_info/maximum_steering_wheel_angle_deg"))
   {
     v_info_.is_stored = false;
     ROS_INFO("vehicle_info is not set");
@@ -46,8 +46,9 @@ void CanStatusTranslatorNode::initForROS()
     private_nh_.getParam("/vehicle_info/minimum_turning_radius", v_info_.minimum_turning_radius);
     // ROS_INFO_STREAM("minimum_turning_radius : " << minimum_turning_radius);
 
-    private_nh_.getParam("/vehicle_info/maximum_steering_angle", v_info_.maximum_steering_angle);  //[degree]:
-    // ROS_INFO_STREAM("maximum_steering_angle : " << maximum_steering_angle);
+    private_nh_.getParam("/vehicle_info/maximum_steering_wheel_angle_deg",
+                         v_info_.maximum_steering_wheel_angle_deg);  //[degree]:
+    // ROS_INFO_STREAM("maximum_steering_wheel_angle_deg : " << maximum_steering_wheel_angle_deg);
 
     v_info_.is_stored = true;
   }
@@ -75,7 +76,8 @@ void CanStatusTranslatorNode::publishVelocity(const autoware_msgs::VehicleStatus
   tw.twist.linear.x = kmph2mps(msg->speed);  // km/h -> m/s
 
   // angular velocity
-  tw.twist.angular.z = v_info_.convertSteeringAngleToAngularVelocity(kmph2mps(msg->speed), msg->angle);
+  tw.twist.angular.z = v_info_.convertSteeringAngleToAngularVelocity(
+      kmph2mps(msg->speed), v_info_.getCurrentSteeringAngle(deg2rad(msg->angle)));
 
   pub1_.publish(tw);
 }
@@ -98,13 +100,14 @@ void CanStatusTranslatorNode::publishVehicleStatus(const autoware_can_msgs::CANI
   vs.gearshift = msg->driveshift;
 
   vs.speed = msg->speed;
-  if(vs.gearshift == static_cast<int>(GearShift::Reverse)) {
-      vs.speed *= -1.0;
+  if (vs.gearshift == static_cast<int>(GearShift::Reverse))
+  {
+    vs.speed *= -1.0;
   }
 
   vs.drivepedal = msg->drivepedal;
   vs.brakepedal = msg->brakepedal;
-  vs.angle = msg->angle;
+  vs.angle = v_info_.getCurrentSteeringAngle(deg2rad(msg->angle));
   vs.lamp = 0;
   vs.light = msg->light;
 

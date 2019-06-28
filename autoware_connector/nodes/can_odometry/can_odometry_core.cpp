@@ -32,8 +32,7 @@ CanOdometryNode::~CanOdometryNode()
 void CanOdometryNode::initForROS()
 {
   // ros parameter settings
-  if (!nh_.hasParam("/vehicle_info/wheel_base") || !nh_.hasParam("/vehicle_info/minimum_turning_radius") ||
-      !nh_.hasParam("/vehicle_info/maximum_steering_angle"))
+  if (!nh_.hasParam("/vehicle_info/wheel_base"))
   {
     v_info_.is_stored = false;
     ROS_INFO("vehicle_info is not set");
@@ -42,12 +41,6 @@ void CanOdometryNode::initForROS()
   {
     private_nh_.getParam("/vehicle_info/wheel_base", v_info_.wheel_base);
     // ROS_INFO_STREAM("wheel_base : " << wheel_base);
-
-    private_nh_.getParam("/vehicle_info/minimum_turning_radius", v_info_.minimum_turning_radius);
-    // ROS_INFO_STREAM("minimum_turning_radius : " << minimum_turning_radius);
-
-    private_nh_.getParam("/vehicle_info/maximum_steering_angle", v_info_.maximum_steering_angle);  //[degree]:
-    // ROS_INFO_STREAM("maximum_steering_angle : " << maximum_steering_angle);
 
     v_info_.is_stored = true;
   }
@@ -64,28 +57,13 @@ void CanOdometryNode::run()
   ros::spin();
 }
 
-void CanOdometryNode::publishOdometry(const autoware_msgs::VehicleStatusConstPtr &msg)
+void CanOdometryNode::publishOdometry(const autoware_msgs::VehicleStatusConstPtr& msg)
 {
   double vx = kmph2mps(msg->speed);
   double vth = v_info_.convertSteeringAngleToAngularVelocity(kmph2mps(msg->speed), msg->angle);
   odom_.updateOdometry(vx, vth, msg->header.stamp);
 
   geometry_msgs::Quaternion odom_quat = tf::createQuaternionMsgFromYaw(odom_.th);
-
-  // first, we'll publish the transform over tf
-  /*geometry_msgs::TransformStamped odom_trans;
-  odom_trans.header.stamp = msg->header.stamp;
-  odom_trans.header.frame_id = "odom";
-  odom_trans.child_frame_id = "base_link";
-
-  odom_trans.transform.translation.x = odom_.x;
-  odom_trans.transform.translation.y = odom_.y;
-  odom_trans.transform.translation.z = 0.0;
-  odom_trans.transform.rotation = odom_quat;
-
-  // send the transform
-  odom_broadcaster_.sendTransform(odom_trans);
-  */
 
   // next, we'll publish the odometry message over ROS
   nav_msgs::Odometry odom;
@@ -107,7 +85,7 @@ void CanOdometryNode::publishOdometry(const autoware_msgs::VehicleStatusConstPtr
   pub1_.publish(odom);
 }
 
-void CanOdometryNode::callbackFromVehicleStatus(const autoware_msgs::VehicleStatusConstPtr &msg)
+void CanOdometryNode::callbackFromVehicleStatus(const autoware_msgs::VehicleStatusConstPtr& msg)
 {
   publishOdometry(msg);
 }
