@@ -66,9 +66,7 @@ variables:
 
 build_kinetic:
   stage: build
-  image: ros:kinetic
-  variables:
-    ROS_DISTRO: kinetic
+  image: ros:kinetic-perception
   <<: *build_common
   script:
     # Install lcov from source as binary installation errors when appending files
@@ -103,9 +101,7 @@ build_kinetic:
 
 build_melodic:
   stage: build
-  image: ros:melodic
-  variables:
-    ROS_DISTRO: melodic
+  image: ros:melodic-perception
   <<: *build_common
   script:
     - apt install -y lcov
