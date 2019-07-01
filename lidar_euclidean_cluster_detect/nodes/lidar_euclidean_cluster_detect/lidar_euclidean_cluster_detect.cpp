@@ -104,6 +104,7 @@ static bool _pose_estimation;
 static double _leaf_size;
 static int _cluster_size_min;
 static int _cluster_size_max;
+static const double _initial_quat_w = 1.0;
 
 static bool _remove_ground;  // only ground
 
@@ -252,7 +253,10 @@ void publishCloudClusters(const ros::Publisher *in_publisher, const autoware_msg
         {
           cluster_transformed.bounding_box.pose.orientation = i->bounding_box.pose.orientation;
         }
-
+        else
+        {
+          cluster_transformed.bounding_box.pose.orientation.w = _initial_quat_w;
+        }
         clusters_transformed.clusters.push_back(cluster_transformed);
       }
       catch (tf::TransformException &ex)
