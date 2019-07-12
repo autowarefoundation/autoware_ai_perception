@@ -236,14 +236,6 @@ void Cluster::SetCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr in_origin_cloud
       polygon_.polygon.points.push_back(point);
     }
 
-    for (size_t i = 0; i < hull.size() + 1; i++)
-    {
-      geometry_msgs::Point32 point;
-      point.x = hull[i % hull.size()].x;
-      point.y = hull[i % hull.size()].y;
-      point.z = max_point_.z;
-      polygon_.polygon.points.push_back(point);
-    }
     if (in_estimate_pose)
     {
       cv::RotatedRect box = minAreaRect(hull);
