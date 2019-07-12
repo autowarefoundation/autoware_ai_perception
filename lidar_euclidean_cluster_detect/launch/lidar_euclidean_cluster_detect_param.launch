@@ -1,0 +1,31 @@
+<!-- -->
+<launch>
+  <arg name="use_vector_map" default="false" />
+  <arg name="wayarea_gridmap_layer" default="wayarea" />
+
+  <node pkg="lidar_euclidean_cluster_detect" type="lidar_euclidean_cluster_detect"
+        name="lidar_euclidean_cluster_detect" output="screen">
+    <rosparam command="load" file="$(find lidar_euclidean_cluster_detect)/config/params.yaml"/>
+  </node>
+
+  <group if="$(arg use_vector_map)">
+    <node name="object_roi_filter_clustering" pkg="roi_object_filter" type="roi_object_filter"
+          output="screen" ns="/detection/lidar_detector">
+      <param name="objects_src_topic" value="/objects"/>
+      <param name="wayarea_gridmap_layer" value="$(arg wayarea_gridmap_layer)"/>
+      <param name="sync_topics" value="false"/>
+      <param name="exception_list" value="[person, bicycle]"/>
+    </node>
+    <node pkg="detected_objects_visualizer" type="visualize_detected_objects" name="cluster_detect_visualization_01"
+          output="screen" ns="/detection/lidar_detector">
+      <param name="objects_src_topic" value="/objects_filtered"/>
+    </node>
+  </group>
+  <group unless="$(arg use_vector_map)">
+    <node pkg="detected_objects_visualizer" type="visualize_detected_objects" name="cluster_detect_visualization_01"
+          output="screen" ns="/detection/lidar_detector">
+      <param name="objects_src_topic" value="/objects"/>
+    </node>
+  </group>
+
+</launch>
