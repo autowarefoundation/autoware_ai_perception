@@ -118,7 +118,6 @@ static bool _keep_lanes;
 static double _keep_lane_left_distance;
 static double _keep_lane_right_distance;
 
-static double _max_boundingbox_side;
 static double _remove_points_upto;
 static double _cluster_merge_threshold;
 static double _clustering_distance;
@@ -246,7 +245,7 @@ void publishCloudClusters(const ros::Publisher *in_publisher, const autoware_msg
         cluster_transformed.dimensions = i->dimensions;
         cluster_transformed.eigen_values = i->eigen_values;
         cluster_transformed.eigen_vectors = i->eigen_vectors;
-        
+
         cluster_transformed.convex_hull = i->convex_hull;
         cluster_transformed.bounding_box.pose.position = i->bounding_box.pose.position;
         if(_pose_estimation)
@@ -1006,8 +1005,6 @@ int main(int argc, char **argv)
   ROS_INFO("[%s] keep_lane_left_distance: %f", __APP_NAME__, _keep_lane_left_distance);
   private_nh.param("keep_lane_right_distance", _keep_lane_right_distance, 5.0);
   ROS_INFO("[%s] keep_lane_right_distance: %f", __APP_NAME__, _keep_lane_right_distance);
-  private_nh.param("max_boundingbox_side", _max_boundingbox_side, 10.0);
-  ROS_INFO("[%s] max_boundingbox_side: %f", __APP_NAME__, _max_boundingbox_side);
   private_nh.param("cluster_merge_threshold", _cluster_merge_threshold, 1.5);
   ROS_INFO("[%s] cluster_merge_threshold: %f", __APP_NAME__, _cluster_merge_threshold);
   private_nh.param<std::string>("output_frame", _output_frame, "velodyne");

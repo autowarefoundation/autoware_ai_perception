@@ -15,7 +15,6 @@
   <arg name="keep_lanes" default="false" />
   <arg name="keep_lane_left_distance" default="5" />
   <arg name="keep_lane_right_distance" default="5" />
-  <arg name="max_boundingbox_side" default="10" />
   <arg name="cluster_merge_threshold" default="1.5" />
   <arg name="clustering_distance" default="0.75" />
 
@@ -33,7 +32,6 @@
   <arg name="clustering_distances"
        default="[0.5,1.1,1.6,2.1,2.6]"/><!-- Euclidean Clustering threshold distance for each segment -->
 
-    <!-- rosrun lidar_tracker euclidean_cluster _points_node:="" -->
   <node pkg="lidar_euclidean_cluster_detect" type="lidar_euclidean_cluster_detect"
         name="lidar_euclidean_cluster_detect" output="screen">
     <param name="points_node"
@@ -48,7 +46,6 @@
     <param name="keep_lanes" value="$(arg keep_lanes)"/>
     <param name="keep_lane_left_distance" value="$(arg keep_lane_left_distance)"/>
     <param name="keep_lane_right_distance" value="$(arg keep_lane_right_distance)"/>
-    <param name="max_boundingbox_side" value="$(arg max_boundingbox_side)"/>
     <param name="clip_min_height" value="$(arg clip_min_height)"/>
     <param name="clip_max_height" value="$(arg clip_max_height)"/>
     <param name="output_frame" value="$(arg output_frame)"/>
