@@ -1,0 +1,49 @@
+# Input pointcloud topic name
+points_node: /points_raw
+
+# Enabled GPU via CUDA for Euclidean Cluster Extraction only
+use_gpu: false
+
+# Points closer than this distance to the lidar will be removed
+remove_points_upto: 0.0
+
+# Enable pointcloud downsampling via VoxelGrid filter
+downsample_cloud: false
+# Downsampling leaf size
+leaf_size: 0.1
+
+# Remove points below this z distance (m)
+clip_min_height: -1.3
+# Remove points above this z distance (m)
+clip_max_height: 0.5
+
+# Enable side-filtering
+keep_lanes: false
+# Remove points further than this distance to the left (m)
+keep_lane_left_distance: 5
+# Remove points further than this distance to the right (m)
+keep_lane_right_distance: 5
+
+# Enable ground plane filtering (removes points belonging to the ground)
+remove_ground: true
+
+# Enable Difference-of-Normals filtering
+use_diffnormals: false
+
+# Minimum amount of points to be considered a cluster
+cluster_size_min: 20
+# Maximum amount of points to be considered a cluster
+cluster_size_max: 100000
+# Clustering tolerance (m)
+clustering_distance: 0.75
+# Enable the use of distance-based clustering tolerances
+use_multiple_thres: false
+# Distance from lidar (m)
+clustering_ranges: [15,30,45,60]
+# Clustering tolerances (m)
+clustering_distances: [0.5,1.1,1.6,2.1,2.6]
+# Distance between cluster centroids (m)
+cluster_merge_threshold: 1.5
+
+# Estimate the pose of the cluster using a minimum-area bounding rectangle
+pose_estimation: true
