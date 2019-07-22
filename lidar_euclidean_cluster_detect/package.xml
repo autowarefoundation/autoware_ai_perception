@@ -1,40 +1,24 @@
 <?xml version="1.0"?>
-<package>
-    <name>lidar_euclidean_cluster_detect</name>
-    <version>1.11.0</version>
-    <description>The lidar_euclidean_cluster_detect package</description>
+<package format="2">
+  <name>lidar_euclidean_cluster_detect</name>
+  <version>1.12.0</version>
+  <description>The lidar_euclidean_cluster_detect package</description>
+  <maintainer email="abrahammonrroy@yahoo.com">amc</maintainer>
+  <license>Apache 2</license>
 
-    <maintainer email="abrahammonrroy@yahoo.com">amc</maintainer>
-    <license>Apache 2</license>
+  <buildtool_depend>autoware_build_flags</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
-    <buildtool_depend>catkin</buildtool_depend>
-    <buildtool_depend>autoware_build_flags</buildtool_depend>
-
-    <build_depend>pcl_ros</build_depend>
-    <build_depend>roscpp</build_depend>
-    <build_depend>geometry_msgs</build_depend>
-    <build_depend>std_msgs</build_depend>
-    <build_depend>sensor_msgs</build_depend>
-    <build_depend>autoware_msgs</build_depend>
-    <build_depend>tf</build_depend>
-    <build_depend>vector_map_server</build_depend>
-    <build_depend>grid_map_ros</build_depend>
-    <build_depend>grid_map_cv</build_depend>
-    <build_depend>grid_map_msgs</build_depend>
-    <build_depend>jsk_rviz_plugins</build_depend>
-
-    <run_depend>pcl_ros</run_depend>
-    <run_depend>roscpp</run_depend>
-    <run_depend>geometry_msgs</run_depend>
-    <run_depend>std_msgs</run_depend>
-    <run_depend>sensor_msgs</run_depend>
-    <run_depend>autoware_msgs</run_depend>
-    <run_depend>tf</run_depend>
-    <run_depend>vector_map_server</run_depend>
-    <run_depend>grid_map_ros</run_depend>
-    <run_depend>grid_map_cv</run_depend>
-    <run_depend>grid_map_msgs</run_depend>
-    <run_depend>jsk_rviz_plugins</run_depend>
-
-    <export></export>
+  <depend>autoware_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>grid_map_cv</depend>
+  <depend>grid_map_msgs</depend>
+  <depend>grid_map_ros</depend>
+  <depend>jsk_rviz_plugins</depend>
+  <depend>pcl_ros</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>std_msgs</depend>
+  <depend>tf</depend>
+  <depend>vector_map_server</depend>
 </package>
