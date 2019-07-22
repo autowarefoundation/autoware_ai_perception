@@ -1,34 +1,23 @@
 <?xml version="1.0"?>
-<package>
-    <name>roi_object_filter</name>
-    <version>1.11.0</version>
-    <description>Object Sanitizer filters detected objects</description>
+<package format="2">
+  <name>roi_object_filter</name>
+  <version>1.12.0</version>
+  <description>Object Sanitizer filters detected objects</description>
+  <maintainer email="abrahammonrroy@yahoo.com">amc</maintainer>
+  <license>Apache</license>
 
-    <maintainer email="abrahammonrroy@yahoo.com">amc</maintainer>
-    <license>Apache</license>
+  <buildtool_depend>autoware_build_flags</buildtool_depend>
+  <buildtool_depend>catkin</buildtool_depend>
 
-    <buildtool_depend>catkin</buildtool_depend>
-    <buildtool_depend>autoware_build_flags</buildtool_depend>
+  <depend>autoware_msgs</depend>
+  <depend>geometry_msgs</depend>
+  <depend>grid_map_cv</depend>
+  <depend>grid_map_msgs</depend>
+  <depend>grid_map_ros</depend>
+  <depend>roscpp</depend>
+  <depend>sensor_msgs</depend>
+  <depend>tf</depend>
 
-    <build_depend>roscpp</build_depend>
-    <build_depend>sensor_msgs</build_depend>
-    <build_depend>autoware_msgs</build_depend>
-    <build_depend>grid_map_ros</build_depend>
-    <build_depend>grid_map_cv</build_depend>
-    <build_depend>grid_map_msgs</build_depend>
-    <build_depend>geometry_msgs</build_depend>
-    <build_depend>tf</build_depend>
-    <build_depend>rostest</build_depend>
-    <build_depend>rosunit</build_depend>
-
-    <run_depend>roscpp</run_depend>
-    <run_depend>sensor_msgs</run_depend>
-    <run_depend>autoware_msgs</run_depend>
-    <run_depend>grid_map_ros</run_depend>
-    <run_depend>grid_map_cv</run_depend>
-    <run_depend>grid_map_msgs</run_depend>
-    <run_depend>geometry_msgs</run_depend>
-    <run_depend>tf</run_depend>
-
-    <export></export>
+  <test_depend>rostest</test_depend>
+  <test_depend>rosunit</test_depend>
 </package>

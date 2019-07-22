@@ -31,7 +31,7 @@ catkin_package(
         sensor_msgs
         pcl_conversions
         velodyne_pointcloud
-        message_generation
+        message_runtime
         autoware_config_msgs
 )
 

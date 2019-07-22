@@ -2,7 +2,6 @@ cmake_minimum_required(VERSION 2.8.3)
 project(lidar_shape_estimation)
 
 find_package(catkin REQUIRED COMPONENTS
-        autoware_build_flags
         autoware_msgs
         pcl_ros
         roscpp
@@ -14,12 +13,12 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(PCL 1.7 REQUIRED)
 find_package(OpenCV REQUIRED)
+find_package(autoware_build_flags REQUIRED)
 
 catkin_package(
         INCLUDE_DIRS
             include
         CATKIN_DEPENDS
-            autoware_build_flags
             autoware_msgs
             pcl_ros
             roscpp
