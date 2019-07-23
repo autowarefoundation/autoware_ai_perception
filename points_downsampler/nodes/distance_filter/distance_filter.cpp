@@ -152,6 +152,7 @@ int main(int argc, char** argv)
 	  filename = "distance_filter_" + std::string(buffer) + ".csv";
 	  ofs.open(filename.c_str(), std::ios::app);
   }
+  private_nh.param<double>("measurement_range", measurement_range, MAX_MEASUREMENT_RANGE);
 
   // Publishers
   filtered_points_pub = nh.advertise<sensor_msgs::PointCloud2>("/filtered_points", 10);
