@@ -33,6 +33,8 @@ static std_msgs::Bool gnss_stat_msg;
 static geometry_msgs::PoseStamped _prev_pose;
 static geometry_msgs::Quaternion _quat;
 static double yaw;
+// true if position history is long enough to compute orientation
+static bool _orientation_ready = false;
 
 static int _plane;
 
@@ -74,20 +76,23 @@ static void GNSSCallback(const sensor_msgs::NavSatFixConstPtr &msg)
     yaw = atan2(pose.pose.position.y - _prev_pose.pose.position.y, pose.pose.position.x - _prev_pose.pose.position.x);
     _quat = tf::createQuaternionMsgFromYaw(yaw);
     _prev_pose = pose;
+    _orientation_ready = true;
   }
 
-  pose.pose.orientation = _quat;
-  pose_publisher.publish(pose);
-  stat_publisher.publish(gnss_stat_msg);
+  if (_orientation_ready)
+  {
+    pose.pose.orientation = _quat;
+    pose_publisher.publish(pose);
+    stat_publisher.publish(gnss_stat_msg);
 
-  //座標変換
-  static tf::TransformBroadcaster br;
-  tf::Transform transform;
-  tf::Quaternion q;
-  transform.setOrigin(tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z));
-  q.setRPY(0, 0, yaw);
-  transform.setRotation(q);
-  br.sendTransform(tf::StampedTransform(transform, msg->header.stamp, "map", "gps"));
+    static tf::TransformBroadcaster br;
+    tf::Transform transform;
+    tf::Quaternion q;
+    transform.setOrigin(tf::Vector3(pose.pose.position.x, pose.pose.position.y, pose.pose.position.z));
+    q.setRPY(0, 0, yaw);
+    transform.setRotation(q);
+    br.sendTransform(tf::StampedTransform(transform, msg->header.stamp, "map", "gps"));
+  }
 }
 
 int main(int argc, char **argv)

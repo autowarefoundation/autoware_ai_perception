@@ -62,6 +62,7 @@ private:
   double orientation_time_, position_time_;
   ros::Time current_time_, orientation_stamp_;
   tf::TransformBroadcaster br_;
+  bool orientation_ready_;  // true if position history is long enough to compute orientation
 
   // callbacks
   void callbackFromNmeaSentence(const nmea_msgs::Sentence::ConstPtr &msg);
@@ -78,5 +79,5 @@ private:
 
 std::vector<std::string> split(const std::string &string);
 
-}  // gnss_localizer
+}  // namespace gnss_localizer
 #endif  // NMEA2TFPOSE_CORE_H
