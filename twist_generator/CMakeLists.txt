@@ -13,6 +13,7 @@ find_package(catkin REQUIRED
         std_msgs
         geometry_msgs    
         autoware_msgs
+        amathutils_lib
 )
 
 ###################################
@@ -33,6 +34,7 @@ catkin_package(
         std_msgs
         geometry_msgs    
         autoware_msgs
+        amathutils_lib
 #  DEPENDS system_lib
 )
 
@@ -48,7 +50,7 @@ include_directories(
 )
 # 
 
-add_executable(vehicle_status_converter src/vehicle_status_converter.cpp)
+add_executable(vehicle_status_converter src/vehicle_status_converter.cpp src/vehicle_status_converter_node.cpp)
 add_dependencies(vehicle_status_converter ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(vehicle_status_converter ${catkin_LIBRARIES})
 
@@ -75,11 +77,10 @@ install(DIRECTORY include/twist_generator/
 ## Testing ##
 #############
 
-## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_twist_generator.cpp)
-# if(TARGET ${PROJECT_NAME}-test)
-#   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
-# endif()
-
-## Add folders to be run by python nosetests
-# catkin_add_nosetests(test)
+if(CATKIN_ENABLE_TESTING)
+        find_package(rostest REQUIRED)
+        add_rostest_gtest(vehicle_status_converter-test test/test_vehicle_status_converter.test 
+                        test/src/test_vehicle_status_converter.cpp
+                        src/vehicle_status_converter.cpp)
+        target_link_libraries(vehicle_status_converter-test ${catkin_LIBRARIES})
+endif()

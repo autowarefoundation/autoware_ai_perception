@@ -1,0 +1,5 @@
+<launch>
+
+  <test test-name="vehicle_status_converter-test" pkg="twist_generator" type="vehicle_status_converter-test" name="test"/>
+
+</launch>
