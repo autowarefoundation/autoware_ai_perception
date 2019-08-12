@@ -20,9 +20,11 @@
 #include <geometry_msgs/TwistStamped.h>
 #include <autoware_msgs/VehicleStatus.h>
 #include <nav_msgs/Odometry.h>
+#include <amathutils_lib/amathutils.hpp>
 
 class VehicleStatusConverter
 {
+friend class VehicleStatusConverterTestSuite;
 public:
     VehicleStatusConverter();
     ~VehicleStatusConverter();
@@ -39,10 +41,12 @@ private:
 
     /* for adaptive estimation */
     bool enable_adaptive_estimate_;
-    double Pn_vx_, Pn_wz_, rho_, adaptive_coefficient_vx_, adaptive_coefficient_wz_;
+    bool enable_steering_offset_estimate_;
+    double Pn_vx_, Pn_wz_, Pn_so_, rho_, adaptive_coefficient_vx_, adaptive_coefficient_wz_, steering_offset_, steering_offset_lim_;
 
     void callbackVehicleStatus(const autoware_msgs::VehicleStatus &msg);
     void callbackEstimateTwist(const geometry_msgs::TwistStamped &estimate_twist);
     void updateAdaptiveCoeffAngvel(const double &w_ndt, const double &vel, const double &steer);
     void updateAdaptiveCoeffVel(const double &v_ndt, const double &vel);
+    void updateSteeringOffset(const double &w_ndt, const double &vel, const double &steer);
 };

@@ -13,4 +13,5 @@
   <depend>geometry_msgs</depend>
   <depend>roscpp</depend>
   <depend>std_msgs</depend>
+  <depend>amathutils_lib</depend>
 </package>

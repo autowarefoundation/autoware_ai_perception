@@ -25,6 +25,7 @@ VehicleStatusConverter::VehicleStatusConverter() : nh_(""), pnh_("~")
 
   pnh_.param("wheelbase", wheelbase_, double(2.9));
   pnh_.param("enable_adaptive_estimate", enable_adaptive_estimate_, bool(false));
+  pnh_.param("enable_steering_offset_estimate", enable_steering_offset_estimate_, bool(false));
 
   if (wheelbase_ < 1.0E-5)
   {
@@ -35,9 +36,12 @@ VehicleStatusConverter::VehicleStatusConverter() : nh_(""), pnh_("~")
 
   adaptive_coefficient_wz_ = 1.0; // adaptive coefficient for angular velocity calculaton
   adaptive_coefficient_vx_ = 1.0; // adaptive coefficient for angular velocity calculaton
+  steering_offset_ = 0.0;          // steering offset
   Pn_wz_ = 1000.0;                // initial covariance
   Pn_vx_ = 1000.0;                // initial covariance
+  Pn_so_ = 1000.0;                // initial_covariance
   rho_ = 0.999;                   // forgetting factor
+  steering_offset_lim_ = amathutils::deg2rad(5.0);            
 };
 
 VehicleStatusConverter::~VehicleStatusConverter(){};
@@ -53,7 +57,8 @@ void VehicleStatusConverter::callbackVehicleStatus(const autoware_msgs::VehicleS
   twist_stamped.header.stamp = msg.header.stamp;
   twist_stamped.header.frame_id = "base_link";
   twist_stamped.twist.linear.x = vel_mps;
-  twist_stamped.twist.angular.z = vel_mps * std::tan(steer_rad) / wheelbase_;
+  twist_stamped.twist.angular.z = enable_steering_offset_estimate_ ? vel_mps * std::tan(steer_rad + steering_offset_) / wheelbase_:
+                                                                    vel_mps * std::tan(steer_rad) / wheelbase_;
   if (enable_adaptive_estimate_)
   {
     twist_stamped.twist.linear.x *= adaptive_coefficient_vx_;
@@ -72,21 +77,27 @@ void VehicleStatusConverter::callbackEstimateTwist(const geometry_msgs::TwistSta
   {
     updateAdaptiveCoeffVel(estimate_twist.twist.linear.x, vel_mps);
     updateAdaptiveCoeffAngvel(estimate_twist.twist.angular.z, vel_mps, steer_rad);
+    // The error between tan(x) and x is about 1 % when x is 10 degree.
+    if (std::abs(steer_rad + steering_offset_) < amathutils::deg2rad(10.0)){
+      updateSteeringOffset(estimate_twist.twist.angular.z, vel_mps, steer_rad);
+    }
   }
 
   std_msgs::Float32MultiArray msg;
   msg.data.push_back(adaptive_coefficient_vx_);
   msg.data.push_back(adaptive_coefficient_wz_);
+  msg.data.push_back(steering_offset_);
   pub_correction_coeff_.publish(msg);
 }
 
 void VehicleStatusConverter::updateAdaptiveCoeffAngvel(const double &w_ndt, const double &vel, const double &steer)
 {
   /* estimate angular velocity correction coeff by Recursive Least Squares Method */
-  const double zn = vel * std::tan(steer) / wheelbase_;
-  const double num = rho_ + zn * Pn_wz_ * zn;
-  Pn_wz_ = (Pn_wz_ - (Pn_wz_ * zn * zn * Pn_wz_) / num) / rho_; // update estimate variance
-  const double temp = adaptive_coefficient_wz_ + (Pn_wz_ * zn / num) * (w_ndt - zn * adaptive_coefficient_wz_);
+  const double zn = enable_steering_offset_estimate_ ? vel * std::tan(steer + steering_offset_) / wheelbase_:
+                                                      vel * std::tan(steer) / wheelbase_;
+  const double den = rho_ + zn * Pn_wz_ * zn;
+  Pn_wz_ = (Pn_wz_ - (Pn_wz_ * zn * zn * Pn_wz_) / den) / rho_; // update estimate variance
+  const double temp = adaptive_coefficient_wz_ + (Pn_wz_ * zn / den) * (w_ndt - zn * adaptive_coefficient_wz_);
   adaptive_coefficient_wz_ = std::max(std::min(temp, 1.5), 0.5); // limit changes
 }
 
@@ -94,16 +105,18 @@ void VehicleStatusConverter::updateAdaptiveCoeffVel(const double &v_ndt, const d
 {
   /* estimate velocity correction coeff by Recursive Least Squares Method */
   const double zn = vel;
-  const double num = rho_ + zn * Pn_vx_ * zn;
-  Pn_vx_ = (Pn_vx_ - (Pn_vx_ * zn * zn * Pn_vx_) / num) / rho_; // update estimate variance
-  const double temp = adaptive_coefficient_vx_ + (Pn_vx_ * zn / num) * (v_ndt - zn * adaptive_coefficient_vx_);
+  const double den = rho_ + zn * Pn_vx_ * zn;
+  Pn_vx_ = (Pn_vx_ - (Pn_vx_ * zn * zn * Pn_vx_) / den) / rho_; // update estimate variance
+  const double temp = adaptive_coefficient_vx_ + (Pn_vx_ * zn / den) * (v_ndt - zn * adaptive_coefficient_vx_);
   adaptive_coefficient_vx_ = std::max(std::min(temp, 1.5), 0.5); // limit changes
 }
 
-int main(int argc, char **argv)
+void VehicleStatusConverter::updateSteeringOffset(const double &w_ndt, const double &vel, const double &steer)
 {
-  ros::init(argc, argv, "twist_generator");
-  VehicleStatusConverter obj;
-  ros::spin();
-  return 0;
-};
+  /* estimate steering offset by Recursive Least Squares Method */
+  const double zn = vel * adaptive_coefficient_wz_ / wheelbase_;
+  const double den = rho_ + zn * Pn_so_ * zn;
+  Pn_so_ = (Pn_so_ - (Pn_so_ * zn * zn * Pn_so_) / den) / rho_; // update estimate variance
+  const double temp = steering_offset_ + (Pn_so_ * zn / den) * (w_ndt - vel * steer * adaptive_coefficient_wz_ / wheelbase_  - zn * steering_offset_);
+  steering_offset_ = std::max(std::min(temp, steering_offset_lim_), -steering_offset_lim_); // limit changes
+}
