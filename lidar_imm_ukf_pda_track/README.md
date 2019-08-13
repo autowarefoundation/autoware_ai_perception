@@ -29,24 +29,17 @@ Launch file available parameters for `imm_ukf_pda_tracker`
 
 |Parameter| Type| Description|
 ----------|-----|--------
-|`input topic`|*String* |Input topic(type: autoware_msgs::CloudClusterArray). Default `/cloud cluster`.|
-|`output topic`|*String*|Output topic(type: autoware_msgs::CloudClusterArray). Default `/tracking_cluster_array`.|
-|`pointcloud frame`|*String*|Pointcloud frame. Default `velodyne`.|
-|`life time thres`|*Int*|The minimum frames for targets to be visualized. Default `8`.|
-|`gating thres`|*Double*|The value of gate threshold for measurement validation. Default `9.22`.|
-|`gate probability`|*Double*|The probability that the gate contains the true measurement. Default `0.99`.|
-|`detection probability`|*Double*|The probability that a target is detected. Default `0.9`.|
-|`distance thres`|*Double*|The distance threshold for associating bounding box over frames. Default `100`.|
-|`static velocity thres`|*Double*|The velocity threshold for classifying static/dynamic. Default `0.5`.|
-|`velocity_explosion thres`|*Double*|The threshold for stopping kalman filter update. Default `1000`.|
+|`tracker_input_topic`|*String* |Input topic(type: autoware_msgs::CloudClusterArray). Default `/cloud cluster`.|
+|`tracker_output_topic`|*String*|Output topic(type: autoware_msgs::CloudClusterArray). Default `/tracking_cluster_array`.|
+|`life_time_thres`|*Int*|The minimum frames for targets to be visualized. Default `8`.|
+|`gating_thres`|*Double*|The value of gate threshold for measurement validation. Default `9.22`.|
+|`gate_probability`|*Double*|The probability that the gate contains the true measurement. Default `0.99`.|
+|`detection_probability`|*Double*|The probability that a target is detected. Default `0.9`.|
+|`merge_distance_threshold`|*Double*|The distance threshold for associating bounding box over frames. Default `0.5`.|
+|`static_velocity_thres`|*Double*|The velocity threshold for classifying static/dynamic. Default `0.5`.|
+|`static_num_history_thres`|*Int*|The amount of frames the velocity is averaged over to compare to `static_velocity_thres`. Default `3`.|
+|`prevent_explosion_thres`|*Double*|The threshold for stopping kalman filter update. Default `1000`.|
 |`use_sukf`|*bool*|Use standard kalman filter. Default `false`.|
-|`is_debug`|*bool*|Turning on debu mode. Publishing rosmarkers for debug. Default `false`.|
-
-
-
-
-
-
 
 Launch file available parameters for `visualize_detected_objects`
 

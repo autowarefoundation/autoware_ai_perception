@@ -31,7 +31,7 @@ ImmUkfPda::ImmUkfPda()
   private_nh_.param<double>("gate_probability", gate_probability_, 0.99);
   private_nh_.param<double>("detection_probability", detection_probability_, 0.9);
   private_nh_.param<double>("static_velocity_thres", static_velocity_thres_, 0.5);
-  private_nh_.param<int>("static_velocity_history_thres", static_num_history_thres_, 3);
+  private_nh_.param<int>("static_num_history_thres", static_num_history_thres_, 3);
   private_nh_.param<double>("prevent_explosion_thres", prevent_explosion_thres_, 1000);
   private_nh_.param<double>("merge_distance_threshold", merge_distance_threshold_, 0.5);
   private_nh_.param<bool>("use_sukf", use_sukf_, false);
