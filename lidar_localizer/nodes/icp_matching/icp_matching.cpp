@@ -80,6 +80,8 @@ static pcl::PointCloud<pcl::PointXYZ> map, add;
 static int map_loaded = 0;
 static int _use_gnss = 1;
 static int init_pos_set = 0;
+// reference for comparing fitness_score, default value set to 500.0
+static double _gnss_reinit_fitness = 500.0;
 
 static pcl::IterativeClosestPoint<pcl::PointXYZ, pcl::PointXYZ> icp;
 
@@ -238,7 +240,7 @@ static void gnss_callback(const geometry_msgs::PoseStamped::ConstPtr& input)
   current_gnss_pose.z = input->pose.position.z;
   gnss_m.getRPY(current_gnss_pose.roll, current_gnss_pose.pitch, current_gnss_pose.yaw);
 
-  if ((_use_gnss == 1 && init_pos_set == 0) || fitness_score >= 500.0)
+  if ((_use_gnss == 1 && init_pos_set == 0) || fitness_score >= _gnss_reinit_fitness)
   {
     previous_pose.x = previous_gnss_pose.x;
     previous_pose.y = previous_gnss_pose.y;
@@ -641,6 +643,7 @@ int main(int argc, char** argv)
   private_nh.getParam("use_gnss", _use_gnss);
   private_nh.getParam("queue_size", _queue_size);
   private_nh.getParam("offset", _offset);
+  private_nh.param<double>("gnss_reinit_fitness", _gnss_reinit_fitness, 500.0);
 
   if (nh.getParam("localizer", _localizer) == false)
   {
@@ -685,6 +688,7 @@ int main(int argc, char** argv)
   std::cout << "queue_size: " << _queue_size << std::endl;
   std::cout << "offset: " << _offset << std::endl;
   std::cout << "localizer: " << _localizer << std::endl;
+  std::cout << "gnss_reinit_fitness: " << _gnss_reinit_fitness << std::endl;
   std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
             << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
   std::cout << "-----------------------------------------------------------------" << std::endl;

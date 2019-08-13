@@ -6,11 +6,13 @@
   <arg name="queue_size" default="10" />
   <arg name="offset" default="linear" />
   <arg name="sync" default="false" />
+  <arg name="gnss_reinit_fitness" default="500.0" />
 
   <node pkg="lidar_localizer" type="icp_matching" name="icp_matching" output="log">
     <param name="use_gnss" value="$(arg use_gnss)" />
     <param name="queue_size" value="$(arg queue_size)" />
     <param name="offset" value="$(arg offset)" />
+    <param name="gnss_reinit_fitness" value="$(arg gnss_reinit_fitness)" />
     <remap from="/points_raw" to="/sync_drivers/points_raw" if="$(arg sync)" />
   </node>
 
