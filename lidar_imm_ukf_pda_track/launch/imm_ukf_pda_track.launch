@@ -1,5 +1,10 @@
 <!-- -->
 <launch>
+  <arg name="namespace" default="/detection/object_tracker"/>
+  <arg name="tracker_input_topic" default="/detection/fusion_tools/objects" />
+  <arg name="tracker_output_topic" default="/detection/object_tracker/objects" />
+
+  <arg name="tracking_frame" default="/world" />
   <arg name="gating_thres" default="9.22" />
   <arg name="gate_probability" default="0.99" />
   <arg name="detection_probability" default="0.9" />
@@ -7,19 +12,14 @@
   <arg name="static_velocity_thres" default="0.5" />
   <arg name="static_num_history_thres" default="3" />
   <arg name="prevent_explosion_thres" default="1000" />
+  <arg name="merge_distance_threshold" default="0.5"/>
+  <arg name="use_sukf" default="false" />
+
+  <!-- Vectormap -->
+  <arg name="use_vectormap" default="false" />
   <arg name="lane_direction_chi_thres" default="2.71" />
   <arg name="nearest_lane_distance_thres" default="1.0" />
-  <arg name="tracker_input_topic" default="/detection/fusion_tools/objects" />
-  <arg name="tracker_output_topic" default="/detection/object_tracker/objects" />
-  <arg name="use_sukf" default="use_sukf" />
-  <arg name="use_vectormap" default="false" />
-
-  <arg name="tracking_frame" default="/world" />
-  <arg name="lane_frame" default="/map" />
-
-  <arg name="merge_distance_threshold" default="0.5"/>
-
-  <arg name="namespace" default="/detection/object_tracker/"/>
+  <arg name="vectormap_frame" default="/map" />
 
   <!-- rosrun lidar_tracker euclidean_cluster _points_node:="" -->
   <node pkg="imm_ukf_pda_track" type="imm_ukf_pda" name="imm_ukf_pda_01" output="screen">
@@ -33,7 +33,7 @@
     <param name="lane_direction_chi_thres" value="$(arg lane_direction_chi_thres)" />
     <param name="nearest_lane_distance_thres" value="$(arg nearest_lane_distance_thres)" />
     <param name="tracking_frame"          value="$(arg tracking_frame)" />
-    <param name="lane_frame"          value="$(arg lane_frame)" />
+    <param name="vectormap_frame"          value="$(arg vectormap_frame)" />
     <param name="use_sukf"                value="$(arg use_sukf)" />
     <param name="use_vectormap"           value="$(arg use_vectormap)" />
 
