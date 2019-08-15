@@ -167,6 +167,9 @@ static int iteration = 0;
 static double fitness_score = 0.0;
 static double trans_probability = 0.0;
 
+// reference for comparing fitness_score, default value set to 500.0
+static double _gnss_reinit_fitness = 500.0;
+
 static double diff = 0.0;
 static double diff_x = 0.0, diff_y = 0.0, diff_z = 0.0, diff_yaw;
 
@@ -550,7 +553,7 @@ static void gnss_callback(const geometry_msgs::PoseStamped::ConstPtr& input)
   ros::Time current_gnss_time = input->header.stamp;
   static ros::Time previous_gnss_time = current_gnss_time;
 
-  if ((_use_gnss == 1 && init_pos_set == 0) || fitness_score >= 500.0)
+  if ((_use_gnss == 1 && init_pos_set == 0) || fitness_score >= _gnss_reinit_fitness)
   {
     previous_pose.x = previous_gnss_pose.x;
     previous_pose.y = previous_gnss_pose.y;
@@ -1555,6 +1558,8 @@ int main(int argc, char** argv)
   private_nh.getParam("use_odom", _use_odom);
   private_nh.getParam("imu_upside_down", _imu_upside_down);
   private_nh.getParam("imu_topic", _imu_topic);
+  private_nh.param<double>("gnss_reinit_fitness", _gnss_reinit_fitness, 500.0);
+
 
   if (nh.getParam("localizer", _localizer) == false)
   {
@@ -1605,6 +1610,7 @@ int main(int argc, char** argv)
   std::cout << "imu_upside_down: " << _imu_upside_down << std::endl;
   std::cout << "imu_topic: " << _imu_topic << std::endl;
   std::cout << "localizer: " << _localizer << std::endl;
+  std::cout << "gnss_reinit_fitness: " << _gnss_reinit_fitness << std::endl;
   std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
             << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
   std::cout << "-----------------------------------------------------------------" << std::endl;
