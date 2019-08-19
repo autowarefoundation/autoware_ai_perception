@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find gnss_localizer)/launch/nmea2tfpose.launch" ns="test">
+    <arg name="plane" value="7" />
+  </include>
+
+  <test test-name="nmea_test" pkg="gnss_localizer" type="nmea_test" />
+</launch>
