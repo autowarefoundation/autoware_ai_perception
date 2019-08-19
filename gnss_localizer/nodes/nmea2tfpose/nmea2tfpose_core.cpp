@@ -113,7 +113,15 @@ void Nmea2TFPoseNode::convert(std::vector<std::string> nmea, ros::Time current_s
       double lat = stod(nmea.at(2));
       double lon = stod(nmea.at(4));
       double h = stod(nmea.at(9));
+
+      if (nmea.at(3) == "S")
+        lat = -lat;
+
+      if (nmea.at(5) == "W")
+        lon = -lon;
+
       geo_.set_llh_nmea_degrees(lat, lon, h);
+
       ROS_INFO("GGA is subscribed.");
     }
     else if(nmea.at(0) == "$GPRMC")
@@ -122,7 +130,15 @@ void Nmea2TFPoseNode::convert(std::vector<std::string> nmea, ros::Time current_s
       double lat = stod(nmea.at(3));
       double lon = stod(nmea.at(5));
       double h = 0.0;
+
+      if (nmea.at(4) == "S")
+        lat = -lat;
+
+      if (nmea.at(6) == "W")
+        lon = -lon;
+
       geo_.set_llh_nmea_degrees(lat, lon, h);
+
       ROS_INFO("GPRMC is subscribed.");
     }
   }catch (const std::exception &e)
