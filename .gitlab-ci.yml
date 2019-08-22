@@ -54,6 +54,32 @@ variables:
     - merge_requests
     - master
 
+.build_cuda: &build_cuda
+  before_script:
+    - mkdir -p src_tmp/$CI_PROJECT_NAME && mv `find -maxdepth 1 -not -name . -not -name src_tmp -not -name $VCS_FILE` src_tmp/$CI_PROJECT_NAME && mv src_tmp/ src/
+    - sudo apt-get update
+    - sudo apt-get install -y libarmadillo-dev libglew-dev libssh2-1-dev python-flask python-requests wget
+    - sudo apt-get install -y python3-pip python3-setuptools python3-colcon-common-extensions python3-vcstool
+    # Update setuptools from PyPI because the version Ubuntu ships with is too old
+    - pip3 install -U setuptools
+    - vcs validate < $VCS_FILE
+    - vcs import src/ < $VCS_FILE
+    - rosdep update
+    - rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+  script:
+    # We first build the entire workspace normally
+    - source /opt/ros/${ROS_DISTRO}/setup.bash
+    - colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug
+    # And then build the tests target. catkin (ROS1) packages add their tests to the tests target
+    # which is not the standard target for CMake projects. We need to trigger the tests target so that
+    # tests are built and any fixtures are set up.
+    - colcon build --cmake-target tests --cmake-args -DCMAKE_BUILD_TYPE=Debug
+    - colcon test
+    - colcon test-result
+  only:
+    - merge_requests
+    - master
+
 .build_cross_vars: &build_cross_vars
     AUTOWARE_TARGET_ARCH: aarch64
     AUTOWARE_TOOLCHAIN_FILE_PATH: $CI_PROJECT_DIR/cross_toolchain.cmake
@@ -70,7 +96,6 @@ variables:
     - colcon build
         --merge-install
         --cmake-args
-        -DPYTHON_EXECUTABLE=/usr/bin/python3
         -DCMAKE_TOOLCHAIN_FILE=${AUTOWARE_TOOLCHAIN_FILE_PATH}
         -DCMAKE_SYSTEM_PROCESSOR=${AUTOWARE_TARGET_ARCH}
         -DCMAKE_PREFIX_PATH="${AUTOWARE_SYSROOT}/opt/ros/${ROS_DISTRO};${CI_PROJECT_DIR}/install"
@@ -97,6 +122,16 @@ build_melodic:
   variables:
     INSTALL_LCOV: sudo apt install -y lcov
   <<: *build_common
+
+build_kinetic_cuda:
+  stage: build
+  image: autoware/autoware:bleedingedge-kinetic-base-cuda
+  <<: *build_cuda
+
+build_melodic_cuda:
+  stage: build
+  image: autoware/autoware:bleedingedge-melodic-base-cuda
+  <<: *build_cuda
 
 build_kinetic_cross:
   stage: build
