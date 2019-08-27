@@ -958,6 +958,8 @@ int main(int argc, char** argv)
   int method_type_tmp = 0;
   private_nh.getParam("method_type", method_type_tmp);
   _method_type = static_cast<MethodType>(method_type_tmp);
+  private_nh.getParam("use_odom", _use_odom);
+  private_nh.getParam("use_imu", _use_imu);
   private_nh.getParam("imu_upside_down", _imu_upside_down);
   private_nh.getParam("imu_topic", _imu_topic);
   private_nh.getParam("incremental_voxel_update", _incremental_voxel_update);
