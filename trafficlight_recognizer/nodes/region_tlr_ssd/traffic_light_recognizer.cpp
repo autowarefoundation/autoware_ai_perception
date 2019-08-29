@@ -1,32 +1,54 @@
-#include "traffic_light_recognizer.h"
+/*
+ * Copyright 2019 Autoware Foundation
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "trafficlight_recognizer/region_tlr_ssd/traffic_light_recognizer.h"
+
+#include <string>
+#include <vector>
 
 // ===========================================
 // Constructor of TrafficLightRecognizer class
 // ===========================================
-TrafficLightRecognizer::TrafficLightRecognizer():
-  num_channels_(0),
-  kPixelMean_(cv::Scalar(102.9801, 115.9465, 122.7717)) {
-} // TrafficLightRecognizer::TrafficLightRecognizer()
+TrafficLightRecognizer::TrafficLightRecognizer()
+  : num_channels_(0), kPixelMean_(cv::Scalar(102.9801, 115.9465, 122.7717))
+{
+}  // TrafficLightRecognizer::TrafficLightRecognizer()
 
 // ===========================================
 // Destructor of TrafficLightRecognizer class
 // ===========================================
-TrafficLightRecognizer::~TrafficLightRecognizer() {
-} // TrafficLightRecognizer::~TrafficLightRecognizer()
-
+TrafficLightRecognizer::~TrafficLightRecognizer()
+{
+}  // TrafficLightRecognizer::~TrafficLightRecognizer()
 
 // ========
 // Init SSD
 // ========
-void TrafficLightRecognizer::Init(const std::string &network_definition_file_name,
-                                  const std::string &pretrained_model_file_name,
-                                  const bool use_gpu,
-                                  const unsigned int gpu_id) {
+void TrafficLightRecognizer::Init(const std::string& network_definition_file_name,
+                                  const std::string& pretrained_model_file_name, const bool use_gpu,
+                                  const unsigned int gpu_id)
+{
   // If user attempt to use GPU, set mode and specify the GPU ID
-  if (use_gpu) {
+  if (use_gpu)
+  {
     caffe::Caffe::set_mode(caffe::Caffe::GPU);
     caffe::Caffe::SetDevice(gpu_id);
-  } else {
+  }
+  else
+  {
     caffe::Caffe::set_mode(caffe::Caffe::CPU);
   }
 
@@ -43,15 +65,14 @@ void TrafficLightRecognizer::Init(const std::string &network_definition_file_nam
 
   input_geometry_ = cv::Size(input_layer->width(), input_layer->height());
 
-  //SetMean(kPixelMean_);
-
-} // void TrafficLightRecognizer::Init()
-
+  // SetMean(kPixelMean_);
+}  // void TrafficLightRecognizer::Init()
 
 // ================================================
 // Run SSD process to recognize traffic light state
 // ================================================
-LightState TrafficLightRecognizer::RecognizeLightState(const cv::Mat& image) {
+LightState TrafficLightRecognizer::RecognizeLightState(const cv::Mat& image)
+{
   caffe::Blob<float>* input_layer = network_->input_blobs()[0];
   input_layer->Reshape(1, num_channels_, input_geometry_.height, input_geometry_.width);
 
@@ -68,19 +89,23 @@ LightState TrafficLightRecognizer::RecognizeLightState(const cv::Mat& image) {
 
   // Get the most probable state from candidates in output layer
   caffe::Blob<float>* candidate_blob = network_->output_blobs()[0];
-  const float* candidate = candidate_blob->cpu_data(); // format: [image_id(0), label(1), score(2), xmin(3), ymin(4), xmax(5), ymax()6)]
+  const float* candidate =
+      candidate_blob->cpu_data();  // format: [image_id(0), label(1), score(2), xmin(3), ymin(4), xmax(5), ymax()6)]
   const int num_candidate = candidate_blob->height();
   float max_score = 0;
   LightState result = LightState::UNDEFINED;
-  for (int k = 0; k < num_candidate; ++k) {
-    if (candidate[0] == -1) {
+  for (int k = 0; k < num_candidate; ++k)
+  {
+    if (candidate[0] == -1)
+    {
       // Skip invalid detection
       candidate += 7;
       continue;
     }
 
     // Search the state candidate which has highest score
-    if (max_score < candidate[2]) {
+    if (max_score < candidate[2])
+    {
       result = static_cast<LightState>(candidate[1]);
     }
 
@@ -89,8 +114,7 @@ LightState TrafficLightRecognizer::RecognizeLightState(const cv::Mat& image) {
   }
 
   return result;
-} // void TrafficLightRecognizer::RecognizeLightState()
-
+}  // void TrafficLightRecognizer::RecognizeLightState()
 
 // ================================================================
 // Wrap the input layer of the network in separate cv::Mat objectes
@@ -99,51 +123,68 @@ LightState TrafficLightRecognizer::RecognizeLightState(const cv::Mat& image) {
 // operation will write the separate channels directly to the input
 // layer.
 // ================================================================
-void TrafficLightRecognizer::WrapInputLayer(std::vector<cv::Mat>* input_channels) {
+void TrafficLightRecognizer::WrapInputLayer(std::vector<cv::Mat>* input_channels)
+{
   caffe::Blob<float>* input_layer = network_->input_blobs()[0];
 
   int width = input_layer->width();
   int height = input_layer->height();
   float* input_data = input_layer->mutable_cpu_data();
-  for (int i = 0; i < input_layer->channels(); ++i) {
+  for (int i = 0; i < input_layer->channels(); ++i)
+  {
     cv::Mat channels(height, width, CV_32FC1, input_data);
     input_channels->push_back(channels);
     input_data += width * height;
   }
-} // void TrafficLightRecognizer::WrapInputLayer()
-
+}  // void TrafficLightRecognizer::WrapInputLayer()
 
 // ================================================
 // Preprocess of SSD
 // ================================================
-void TrafficLightRecognizer::Preprocess(const cv::Mat& image, std::vector<cv::Mat>* input_channells) {
+void TrafficLightRecognizer::Preprocess(const cv::Mat& image, std::vector<cv::Mat>* input_channells)
+{
   // Convert the input image to the input image format of the network.
   cv::Mat sample;
-  if (image.channels() == 3 && num_channels_ == 1) {
+  if (image.channels() == 3 && num_channels_ == 1)
+  {
     cv::cvtColor(image, sample, cv::COLOR_BGR2GRAY);
-  } else if (image.channels() == 4 && num_channels_ == 1) {
+  }
+  else if (image.channels() == 4 && num_channels_ == 1)
+  {
     cv::cvtColor(image, sample, cv::COLOR_BGRA2GRAY);
-  } else if (image.channels() == 4 && num_channels_ == 3) {
+  }
+  else if (image.channels() == 4 && num_channels_ == 3)
+  {
     cv::cvtColor(image, sample, cv::COLOR_BGRA2BGR);
-  } else if (image.channels() == 1 && num_channels_ == 3) {
+  }
+  else if (image.channels() == 1 && num_channels_ == 3)
+  {
     cv::cvtColor(image, sample, cv::COLOR_GRAY2BGR);
-  } else {
+  }
+  else
+  {
     sample = image;
   }
 
   cv::Mat sample_resized;
-  if (sample.size() != input_geometry_) {
+  if (sample.size() != input_geometry_)
+  {
     cv::resize(sample, sample_resized, input_geometry_);
-  } else {
+  }
+  else
+  {
     sample_resized = sample;
- }
+  }
 
   cv::Mat sample_float;
   cv::Mat mean_image;
-  if (num_channels_ == 3) {
+  if (num_channels_ == 3)
+  {
     sample_resized.convertTo(sample_float, CV_32FC3);
     mean_image = cv::Mat(input_geometry_, CV_32FC3, kPixelMean_);
-  } else {
+  }
+  else
+  {
     sample_resized.convertTo(sample_float, CV_32FC1);
     mean_image = cv::Mat(input_geometry_, CV_32FC1, kPixelMean_);
   }
@@ -155,7 +196,5 @@ void TrafficLightRecognizer::Preprocess(const cv::Mat& image, std::vector<cv::Ma
   // input layer of the network because it is wrapped by the cv::Mat
   // objects in input_channels.
   cv::split(sample_normalized, *input_channells);
-  CHECK(reinterpret_cast<float*>(input_channells->at(0).data)
-        == network_->input_blobs()[0]->cpu_data());
-
-} // void TrafficLightRecognizer::Preprocess()
+  CHECK(reinterpret_cast<float*>(input_channells->at(0).data) == network_->input_blobs()[0]->cpu_data());
+}  // void TrafficLightRecognizer::Preprocess()

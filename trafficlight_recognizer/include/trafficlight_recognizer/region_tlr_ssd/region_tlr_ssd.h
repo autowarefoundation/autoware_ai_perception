@@ -1,42 +1,61 @@
-#ifndef REGION_TLR_SSD_H
-#define REGION_TLR_SSD_H
+/*
+ * Copyright 2019 Autoware Foundation
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef TRAFFICLIGHT_RECOGNIZER_REGION_TLR_SSD_REGION_TLR_SSD_H
+#define TRAFFICLIGHT_RECOGNIZER_REGION_TLR_SSD_REGION_TLR_SSD_H
 
 #include <string>
+#include <vector>
 
 #include <opencv2/opencv.hpp>
+
 #include <ros/ros.h>
+#include <autoware_msgs/Signals.h>
+#include <cv_bridge/cv_bridge.h>
 #include <sensor_msgs/Image.h>
 #include <sensor_msgs/image_encodings.h>
-#include <cv_bridge/cv_bridge.h>
 
-#include "Context.h"
-#include "autoware_msgs/Signals.h"
-#include "traffic_light_recognizer.h"
+#include "trafficlight_recognizer/context.h"
+#include "trafficlight_recognizer/region_tlr_ssd/traffic_light_recognizer.h"
 
-class RegionTLRSSDROSNode {
- public:
+class RegionTLRSSDROSNode
+{
+public:
   RegionTLRSSDROSNode();
   ~RegionTLRSSDROSNode();
 
   void RunRecognition();
-  void ImageRawCallback(const sensor_msgs::Image &image);
-  void ROISignalCallback(const autoware_msgs::Signals::ConstPtr &extracted_pos);
+  void ImageRawCallback(const sensor_msgs::Image& image);
+  void ROISignalCallback(const autoware_msgs::Signals::ConstPtr& extracted_pos);
 
   // The vector of data structure to save traffic light state, position, ...etc
   std::vector<Context> contexts_;
 
- private:
+private:
   /* Light state transition probably happen in Japanese traffic light */
-  const LightState kStateTransitionMatrix[4][4] = {
+  const LightState kStateTransitionMatrix[4][4] =
+  {
     /* current: */
     /* GREEN   , YELLOW    , RED    , UNDEFINED  */
     /* -------------------------------------------  */
-    {GREEN     , YELLOW    , YELLOW    , GREEN}  ,  /* | previous = GREEN */
-    {UNDEFINED , YELLOW    , RED       , YELLOW} ,  /* | previous = YELLOW */
-    {GREEN     , RED       , RED       , RED}    ,  /* | previous = RED */
-    {GREEN     , YELLOW    , RED       , UNDEFINED} /* | previous = UNDEFINED */
+    { GREEN, YELLOW, YELLOW, GREEN },   /* | previous = GREEN */
+    { UNDEFINED, YELLOW, RED, YELLOW }, /* | previous = YELLOW */
+    { GREEN, RED, RED, RED },           /* | previous = RED */
+    { GREEN, YELLOW, RED, UNDEFINED }   /* | previous = UNDEFINED */
   };
-
 
   void GetROSParam();
   void StartSubscribersAndPublishers();
@@ -87,4 +106,4 @@ class RegionTLRSSDROSNode {
   const std::string kStringUnknown;
 };
 
-#endif  // REGION_TLR_SSD_H
+#endif  // TRAFFICLIGHT_RECOGNIZER_REGION_TLR_SSD_REGION_TLR_SSD_H

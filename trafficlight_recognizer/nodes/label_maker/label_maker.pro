@@ -3,6 +3,8 @@ QT  += widgets
 FORMS += \
     label_maker_gui.ui
 
+INCLUDEPATH += $$_PRO_FILE_PWD_/../../include/trafficlight_recognizer/label_maker
+
 HEADERS += \
     label_maker_gui.h \
     custom_graphics_view.h \
