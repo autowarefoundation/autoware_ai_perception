@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-#include "trafficlight_recognizer/label_maker/label_maker_gui.h"
-#include <ros/ros.h>
-#include <QApplication>
+#ifndef TRAFFICLIGHT_RECOGNIZER_TRAFFIC_LIGHT_H
+#define TRAFFICLIGHT_RECOGNIZER_TRAFFIC_LIGHT_H
 
-int main(int argc, char* argv[])
-{
-  // ROS initialization
-  ros::init(argc, argv, "label_maker");
+/* Extra includes */
+#include "autoware_msgs/Signals.h"
 
-  QApplication application(argc, argv);
-  LabelMakerGui window;
+#define MAIN_WINDOW_NAME "Main"
+#define SETTINGS_WINDOW_NAME "Settings"
 
-  window.show();
+#define TLR_GREEN_SIGNAL_STR "green signal"
+#define TLR_RED_SIGNAL_STR "red signal"
+#define TLR_UNKNOWN_SIGNAL_STR ""
+#define TRAFFIC_LIGHT_RED 0
+#define TRAFFIC_LIGHT_GREEN 1
+#define TRAFFIC_LIGHT_UNKNOWN 2
 
-  return application.exec();
-}
+#endif  // TRAFFICLIGHT_RECOGNIZER_TRAFFIC_LIGHT_H

@@ -17,7 +17,7 @@
   <depend>libvectormap</depend>
   <depend>qtbase5-dev</depend>
   <depend>roscpp</depend>
-  <depend>runtime_manager</depend>
+  <depend>roslint</depend>
   <depend>sensor_msgs</depend>
   <depend>std_msgs</depend>
   <depend>tf</depend>

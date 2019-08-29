@@ -1,5 +1,21 @@
-#ifndef CUSTOMQLABEL_H
-#define CUSTOMQLABEL_H
+/*
+ * Copyright 2019 Autoware Foundation
+ * 
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *    http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#ifndef TRAFFICLIGHT_RECOGNIZER_LABEL_MAKER_CUSTOM_GRAPHICS_VIEW_H
+#define TRAFFICLIGHT_RECOGNIZER_LABEL_MAKER_CUSTOM_GRAPHICS_VIEW_H
 
 #include <QGraphicsView>
 #include <QWheelEvent>
@@ -9,13 +25,12 @@
 #include <QMouseEvent>
 #include <QGraphicsRectItem>
 
-
 class CustomGraphicsView : public QGraphicsView
 {
   Q_OBJECT
 
 public:
-  CustomGraphicsView(QWidget *parent = 0);
+  explicit CustomGraphicsView(QWidget* parent = 0);
   ~CustomGraphicsView();
 
   // The function to set pixel map
@@ -40,7 +55,7 @@ private slots:
 protected:
   // Custom wheel event slot so that displayed image can be zoomed by mouse operation
   // Ref: https://wiki.qt.io/SmoothZoomInQGraphicsView
-  virtual void wheelEvent(QWheelEvent *event);
+  virtual void wheelEvent(QWheelEvent* event);
 
   // Custom mouse event slot in order to get specified position
   virtual void mousePressEvent(QMouseEvent* mouse_event);
@@ -69,4 +84,4 @@ private:
   bool dragging_;
 };
 
-#endif // CUSTOMQLABEL_H
+#endif  // TRAFFICLIGHT_RECOGNIZER_LABEL_MAKER_CUSTOM_GRAPHICS_VIEW_H

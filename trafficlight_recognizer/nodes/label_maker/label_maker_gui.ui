@@ -266,7 +266,7 @@
   <customwidget>
    <class>CustomGraphicsView</class>
    <extends>QGraphicsView</extends>
-   <header location="global">custom_graphics_view.h</header>
+   <header location="global">trafficlight_recognizer/label_maker/custom_graphics_view.h</header>
   </customwidget>
  </customwidgets>
  <resources/>
