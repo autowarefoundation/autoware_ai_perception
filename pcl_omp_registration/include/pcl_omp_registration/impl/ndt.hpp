@@ -201,9 +201,14 @@ pcl_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivati
   int num_threads = omp_get_max_threads() * 2;
   Eigen::Matrix<double, 6, 1> score_gradient_i[num_threads];
   Eigen::Matrix<double, 6, 6> hessian_i[num_threads];
+  std::vector<Eigen::Matrix<double,3,6>> point_gradient_i(num_threads);
+  std::vector<Eigen::Matrix<double,18,6>> point_hessian_i(num_threads);
   for (int i = 0; i < num_threads; ++i) {
-      score_gradient_i[i].setZero ();
-      hessian_i[i].setZero ();
+    score_gradient_i[i].setZero ();
+    hessian_i[i].setZero ();
+    point_gradient_i[i].setZero ();
+    point_gradient_i[i].block<3, 3>(0, 0).setIdentity ();
+    point_hessian_i[i].setZero ();
   }
 
   omp_set_nested(1);
@@ -234,58 +239,94 @@ pcl_omp::NormalDistributionsTransform<PointSource, PointTarget>::computeDerivati
       // Uses precomputed covariance for speed.
       c_inv = cell->getInverseCov ();
 
+#ifndef _OPENMP
       // Compute derivative of transform function w.r.t. transform vector, J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
       computePointDerivatives (x);
+
       // Update score, gradient and hessian, lines 19-21 in Algorithm 2, according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
-      //score += updateDerivatives (score_gradient, hessian, x_trans, c_inv, compute_hessian);
+      score += updateDerivatives (score_gradient, hessian, x_trans, c_inv, compute_hessian);
+#else
+      // Compute derivative of transform function w.r.t. transform vector, J_E and H_E in Equations 6.18 and 6.20 [Magnusson 2009]
+      // computePointDerivatives (x);
       {
-          Eigen::Vector3d cov_dxd_pi;
-          // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
-          double e_x_cov_x = exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2);
-          // Calculate probability of transtormed points existance, Equation 6.9 [Magnusson 2009]
-          double score_inc = -gauss_d1_ * e_x_cov_x;
+        // Calculate first derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+        // Derivative w.r.t. ith element of transform vector corresponds to column i, Equation 6.18 and 6.19 [Magnusson 2009]
+        point_gradient_i[omp_get_thread_num()] (1, 3) = x.dot (j_ang_a_);
+        point_gradient_i[omp_get_thread_num()] (2, 3) = x.dot (j_ang_b_);
+        point_gradient_i[omp_get_thread_num()] (0, 4) = x.dot (j_ang_c_);
+        point_gradient_i[omp_get_thread_num()] (1, 4) = x.dot (j_ang_d_);
+        point_gradient_i[omp_get_thread_num()] (2, 4) = x.dot (j_ang_e_);
+        point_gradient_i[omp_get_thread_num()] (0, 5) = x.dot (j_ang_f_);
+        point_gradient_i[omp_get_thread_num()] (1, 5) = x.dot (j_ang_g_);
+        point_gradient_i[omp_get_thread_num()] (2, 5) = x.dot (j_ang_h_);
 
-          e_x_cov_x = gauss_d2_ * e_x_cov_x;
+        if (compute_hessian)
+        {
+          // Vectors from Equation 6.21 [Magnusson 2009]
+          Eigen::Vector3d a, b, c, d, e, f;
 
-          // Error checking for invalid values.
-          if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
-              score_inc = 0;
-          } else {
-              // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
-              e_x_cov_x *= gauss_d1_;
+          a << 0, x.dot (h_ang_a2_), x.dot (h_ang_a3_);
+          b << 0, x.dot (h_ang_b2_), x.dot (h_ang_b3_);
+          c << 0, x.dot (h_ang_c2_), x.dot (h_ang_c3_);
+          d << x.dot (h_ang_d1_), x.dot (h_ang_d2_), x.dot (h_ang_d3_);
+          e << x.dot (h_ang_e1_), x.dot (h_ang_e2_), x.dot (h_ang_e3_);
+          f << x.dot (h_ang_f1_), x.dot (h_ang_f2_), x.dot (h_ang_f3_);
 
-
-              for (int i = 0; i < 6; i++)
-              {
-                  // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009o
-                  cov_dxd_pi = c_inv * point_gradient_.col (i);
-
-                  // Update gradient, Equation 6.12 [Magnusson 2009]
-#ifdef _OPENMP
-                  score_gradient_i[omp_get_thread_num()] (i) += x_trans.dot (cov_dxd_pi) * e_x_cov_x;
-#else
-                  score_gradient (i) += x_trans.dot (cov_dxd_pi) * e_x_cov_x;
-#endif
-                  if (compute_hessian)
-                  {
-                      for (int j = 0; j < hessian.cols (); j++)
-                      {
-                          // Update hessian, Equation 6.13 [Magnusson 2009]
-#ifdef _OPENMP
-                          hessian_i[omp_get_thread_num()] (i, j) += e_x_cov_x * (-gauss_d2_ * x_trans.dot (cov_dxd_pi) * x_trans.dot (c_inv * point_gradient_.col (j)) +
-                                                         x_trans.dot (c_inv * point_hessian_.block<3, 1>(3 * i, j)) +
-                                                         point_gradient_.col (j).dot (cov_dxd_pi) );
-#else
-                          hessian (i, j) += e_x_cov_x * (-gauss_d2_ * x_trans.dot (cov_dxd_pi) * x_trans.dot (c_inv * point_gradient_.col (j)) +
-                                                         x_trans.dot (c_inv * point_hessian_.block<3, 1>(3 * i, j)) +
-                                                         point_gradient_.col (j).dot (cov_dxd_pi) );
-#endif
-                      }
-                  }
-              }
-          }
-          score += score_inc;
+          // Calculate second derivative of Transformation Equation 6.17 w.r.t. transform vector p.
+          // Derivative w.r.t. ith and jth elements of transform vector corresponds to the 3x1 block matrix starting at (3i,j), Equation 6.20 and 6.21 [Magnusson 2009]
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(9, 3) = a;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(12, 3) = b;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(15, 3) = c;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(9, 4) = b;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(12, 4) = d;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(15, 4) = e;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(9, 5) = c;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(12, 5) = e;
+          point_hessian_i[omp_get_thread_num()].block<3, 1>(15, 5) = f;
+        }
       }
+
+      // Update score, gradient and hessian, lines 19-21 in Algorithm 2, according to Equations 6.10, 6.12 and 6.13, respectively [Magnusson 2009]
+      // score += updateDerivatives (score_gradient, hessian, x_trans, c_inv, compute_hessian);
+      {
+        Eigen::Vector3d cov_dxd_pi;
+        // e^(-d_2/2 * (x_k - mu_k)^T Sigma_k^-1 (x_k - mu_k)) Equation 6.9 [Magnusson 2009]
+        double e_x_cov_x = exp (-gauss_d2_ * x_trans.dot (c_inv * x_trans) / 2);
+        // Calculate probability of transtormed points existance, Equation 6.9 [Magnusson 2009]
+        double score_inc = -gauss_d1_ * e_x_cov_x;
+
+        e_x_cov_x = gauss_d2_ * e_x_cov_x;
+
+        // Error checking for invalid values.
+        if (e_x_cov_x > 1 || e_x_cov_x < 0 || e_x_cov_x != e_x_cov_x) {
+          score_inc = 0;
+        } else {
+          // Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009]
+          e_x_cov_x *= gauss_d1_;
+
+
+          for (int i = 0; i < 6; i++)
+          {
+            // Sigma_k^-1 d(T(x,p))/dpi, Reusable portion of Equation 6.12 and 6.13 [Magnusson 2009o
+            cov_dxd_pi = c_inv * point_gradient_i[omp_get_thread_num()].col (i);
+
+            // Update gradient, Equation 6.12 [Magnusson 2009]
+            score_gradient_i[omp_get_thread_num()] (i) += x_trans.dot (cov_dxd_pi) * e_x_cov_x;
+            if (compute_hessian)
+            {
+              for (int j = 0; j < hessian.cols (); j++)
+              {
+                // Update hessian, Equation 6.13 [Magnusson 2009]
+                hessian_i[omp_get_thread_num()] (i, j) += e_x_cov_x * (-gauss_d2_ * x_trans.dot (cov_dxd_pi) * x_trans.dot (c_inv * point_gradient_i[omp_get_thread_num()].col (j)) +
+                                               x_trans.dot (c_inv * point_hessian_i[omp_get_thread_num()].block<3, 1>(3 * i, j)) +
+                                               point_gradient_i[omp_get_thread_num()].col (j).dot (cov_dxd_pi) );
+              }
+            }
+          }
+        }
+        score += score_inc;
+      }
+#endif
     }
   }
 #ifdef _OPENMP
