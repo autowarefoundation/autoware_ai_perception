@@ -924,7 +924,7 @@ static void imu_callback(const sensor_msgs::Imu::Ptr& input)
 
 static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
 {
-  health_checker_ptr_->CHECK_RATE("/topic/rate/points_raw/slow",8,5,1,"topic points_raw subscribe rate low.");
+  health_checker_ptr_->CHECK_RATE("/topic/rate/filtered_points/slow",8,5,1,"topic filtered_points subscribe rate low.");
   if (map_loaded == 1 && init_pos_set == 1)
   {
     matching_start = std::chrono::system_clock::now();
@@ -1357,7 +1357,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     }
 
     predict_pose_pub.publish(predict_pose_msg);
-    health_checker_ptr_->CHECK_RATE("/topic/rate/ndt_pose/slow",8,5,1,"topic points_raw publish rate low.");
+    health_checker_ptr_->CHECK_RATE("/topic/rate/ndt_pose/slow",8,5,1,"topic ndt_pose publish rate low.");
     ndt_pose_pub.publish(ndt_pose_msg);
     // current_pose is published by vel_pose_mux
     //    current_pose_pub.publish(current_pose_msg);
