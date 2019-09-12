@@ -924,7 +924,7 @@ static void imu_callback(const sensor_msgs::Imu::Ptr& input)
 
 static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
 {
-  health_checker_ptr_->CHECK_RATE("/topic/rate/filtered_points/slow",8,5,1,"topic filtered_points subscribe rate low.");
+  health_checker_ptr_->CHECK_RATE("topic_rate_filtered_points_slow", 8, 5, 1, "topic filtered_points subscribe rate slow.");
   if (map_loaded == 1 && init_pos_set == 1)
   {
     matching_start = std::chrono::system_clock::now();
@@ -1357,7 +1357,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     }
 
     predict_pose_pub.publish(predict_pose_msg);
-    health_checker_ptr_->CHECK_RATE("/topic/rate/ndt_pose/slow",8,5,1,"topic ndt_pose publish rate low.");
+    health_checker_ptr_->CHECK_RATE("topic_rate_ndt_pose_slow", 8, 5, 1, "topic ndt_pose publish rate slow.");
     ndt_pose_pub.publish(ndt_pose_msg);
     // current_pose is published by vel_pose_mux
     //    current_pose_pub.publish(current_pose_msg);
@@ -1379,7 +1379,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     matching_end = std::chrono::system_clock::now();
     exe_time = std::chrono::duration_cast<std::chrono::microseconds>(matching_end - matching_start).count() / 1000.0;
     time_ndt_matching.data = exe_time;
-    health_checker_ptr_->CHECK_MAX_VALUE("/value/time_ndt_matching",time_ndt_matching.data,50,70,100,"value time_ndt_matching is too high.");
+    health_checker_ptr_->CHECK_MAX_VALUE("time_ndt_matching", time_ndt_matching.data, 50, 70, 100, "value time_ndt_matching is too high.");
     time_ndt_matching_pub.publish(time_ndt_matching);
 
     // Set values for /estimate_twist
@@ -1397,8 +1397,8 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     geometry_msgs::Vector3Stamped estimate_vel_msg;
     estimate_vel_msg.header.stamp = current_scan_time;
     estimate_vel_msg.vector.x = current_velocity;
-    health_checker_ptr_->CHECK_MAX_VALUE("/value/estimate_twist/linear",current_velocity,5,10,15,"value linear estimated twist is too high.");
-    health_checker_ptr_->CHECK_MAX_VALUE("/value/estimate_twist/angular",angular_velocity,5,10,15,"value linear angular twist is too high.");
+    health_checker_ptr_->CHECK_MAX_VALUE("estimate_twist_linear", current_velocity, 5, 10, 15, "value linear estimated twist is too high.");
+    health_checker_ptr_->CHECK_MAX_VALUE("estimate_twist_angular", angular_velocity, 5, 10, 15, "value linear angular twist is too high.");
     estimated_vel_pub.publish(estimate_vel_msg);
 
     // Set values for /ndt_stat
