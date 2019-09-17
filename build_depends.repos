@@ -1,13 +1,21 @@
 repositories:
-  common:
+  depends/autoware/common:
     type: git
     url: https://gitlab.com/autowarefoundation/autoware.ai/common.git
     version: master
-  qpoases:
+  depends/autoware/messages:
     type: git
-    url: https://gitlab.com/autowarefoundation/autoware.ai/qpoases_vendor.git
+    url: https://gitlab.com/autowarefoundation/autoware.ai/messages.git
     version: master
-  utilities:
+  depends/autoware/utilities:
     type: git
     url: https://gitlab.com/autowarefoundation/autoware.ai/utilities.git
     version: master
+  depends/vendor/lanelet2:
+    type: git
+    url: https://github.com/fzi-forschungszentrum-informatik/Lanelet2.git
+    version: d13cf9c86b9f01821a7242ef6652c0daed5a7d84
+  depends/vendor/mrt_cmake_modules:
+    type: git
+    url: https://github.com/KIT-MRT/mrt_cmake_modules.git
+    version: 67a93bcfee4f7e9e39e79f138ecadbba5c8392b7
