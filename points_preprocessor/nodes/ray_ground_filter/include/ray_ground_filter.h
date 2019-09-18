@@ -34,7 +34,7 @@
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
 
 //headers in Autoware Health Checker
-#include <autoware_health_checker/node_status_publisher.h>
+#include <autoware_health_checker/health_checker/health_checker.h>
 
 #include <opencv2/core/version.hpp>
 #if (CV_MAJOR_VERSION == 3)
@@ -46,7 +46,7 @@
 class RayGroundFilter
 {
 private:
-	std::shared_ptr<autoware_health_checker::NodeStatusPublisher> node_status_pub_ptr_;
+	std::shared_ptr<autoware_health_checker::HealthChecker> health_checker_ptr_;
 	ros::NodeHandle     node_handle_;
 	ros::Subscriber     points_node_sub_;
 	ros::Subscriber     config_node_sub_;
@@ -94,7 +94,7 @@ private:
 	void publish_cloud(const ros::Publisher& in_publisher,
 	                         const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_to_publish_ptr,
 	                         const std_msgs::Header& in_header);
-	
+
 	/*!
 	 *
 	 * @param[in] in_cloud Input Point Cloud to be organized in radial segments
@@ -117,7 +117,7 @@ private:
 	void ClassifyPointCloud(std::vector<PointCloudXYZIRTColor>& in_radial_ordered_clouds,
 	                        pcl::PointIndices& out_ground_indices,
 	                        pcl::PointIndices& out_no_ground_indices);
-	
+
 
 	/*!
 	 * Removes the points higher than a threshold
@@ -128,7 +128,7 @@ private:
 	void ClipCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr,
 	               double in_clip_height,
 	               pcl::PointCloud<pcl::PointXYZI>::Ptr out_clipped_cloud_ptr);
-	
+
 
 	/*!
 	 * Returns the resulting complementary PointCloud, one with the points kept and the other removed as indicated
@@ -142,7 +142,7 @@ private:
 	                          const pcl::PointIndices& in_indices,
 	                          pcl::PointCloud<pcl::PointXYZI>::Ptr out_only_indices_cloud_ptr,
 	                          pcl::PointCloud<pcl::PointXYZI>::Ptr out_removed_indices_cloud_ptr);
-	
+
 	/*!
 	 * Removes points up to a certain distance in the XY Plane
 	 * @param in_cloud_ptr Input PointCloud
@@ -152,9 +152,9 @@ private:
 	void RemovePointsUpTo(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr,
 	                      double in_min_distance,
 	                      pcl::PointCloud<pcl::PointXYZI>::Ptr out_filtered_cloud_ptr);
-	
+
 	void CloudCallback(const sensor_msgs::PointCloud2ConstPtr &in_sensor_cloud);
-	
+
 friend class RayGroundFilter_clipCloud_Test;
 public:
 	RayGroundFilter();
