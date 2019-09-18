@@ -16,9 +16,8 @@
 
 #include "ekf_localizer/ekf_localizer.h"
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-
   ros::init(argc, argv, "ekf_localizer");
   EKFLocalizer obj;
 
