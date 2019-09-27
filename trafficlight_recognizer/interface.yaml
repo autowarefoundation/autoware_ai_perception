@@ -2,6 +2,10 @@
   publish: [/roi_signal]
   subscribe: [/vector_map_info/*, /camera/camera_info, /config/adjust_xy, /current_pose,
     /final_waypoints]
+- name: /feature_proj_lanelet2_node
+  publish: [/roi_signal]
+  subscribe: [/lanelet2_map_bin, /camera/camera_info, /config/adjust_xy, /current_pose,
+    /final_waypoints]
 - name: /traffic_light_recognition
   publish: [/camera_light_color, /sound_player, /tlr_result, /tlr_superimpose_image,
     /tlr_result_array]
