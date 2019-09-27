@@ -1,0 +1,5 @@
+<launch>
+
+	<test test-name="test-feat_proj_lanelet2" pkg="trafficlight_recognizer" type="test-feat_proj_lanelet2" name="test"/>
+	
+</launch>

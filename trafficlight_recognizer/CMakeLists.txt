@@ -20,6 +20,7 @@ find_package(catkin REQUIRED COMPONENTS
         visualization_msgs
         autoware_msgs
         vector_map
+        lanelet2_extension
         )
 
 find_package(OpenCV REQUIRED)
@@ -75,6 +76,8 @@ catkin_package(
 
   LIBRARIES libcontext
 )
+
+
 
 set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS}")
 
@@ -144,6 +147,21 @@ add_dependencies(
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_executable(feat_proj_lanelet2
+        nodes/feat_proj_lanelet2/feat_proj_lanelet2_core.cpp
+        nodes/feat_proj_lanelet2/feat_proj_lanelet2_node.cpp
+        )
+
+target_link_libraries(feat_proj_lanelet2
+        ${catkin_LIBRARIES}
+        ${OpenCV_LIBS}
+        )
+
+add_dependencies(feat_proj_lanelet2
+        ${catkin_EXPORTED_TARGETS}
+        )
+
+
 ### tlr_tuner ###
 EXECUTE_PROCESS(
   COMMAND pkg-config --variable=host_bins Qt5Core
@@ -203,6 +221,7 @@ add_dependencies(
 )
 
 ### label_maker ###
+
 find_package(Qt5Core REQUIRED)
 find_package(Qt5Gui REQUIRED)
 find_package(Qt5Widgets REQUIRED)
@@ -238,7 +257,7 @@ target_link_libraries(
 )
 
 install(
-  TARGETS region_tlr feat_proj tlr_tuner roi_extractor label_maker libcontext tl_switch
+  TARGETS region_tlr feat_proj tlr_tuner feat_proj_lanelet2 roi_extractor label_maker libcontext tl_switch
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
@@ -359,4 +378,15 @@ endif ()
 
 if (CATKIN_ENABLE_TESTING)
   roslint_add_test()
+  find_package(rostest REQUIRED)
+  add_rostest_gtest(test-feat_proj_lanelet2
+    test/test_feat_proj_lanelet2.test
+    test/src/test_feat_proj_lanelet2.cpp
+    nodes/feat_proj_lanelet2/feat_proj_lanelet2_core.cpp
+    )
+  add_dependencies(test-feat_proj_lanelet2 ${catkin_EXPORTED_TARGETS})
+  target_link_libraries(test-feat_proj_lanelet2
+    ${catkin_LIBRARIES}
+    ${OpenCV_LIBS}
+    )
 endif ()

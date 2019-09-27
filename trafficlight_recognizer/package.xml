@@ -24,4 +24,6 @@
   <depend>vector_map</depend>
   <depend>vector_map_server</depend>
   <depend>visualization_msgs</depend>
+  <depend>lanelet2_extension</depend>
+  
 </package>
