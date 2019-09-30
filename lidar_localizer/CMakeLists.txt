@@ -64,6 +64,7 @@ catkin_package(
         velodyne_pointcloud
         autoware_msgs
         autoware_config_msgs
+        autoware_health_checker
         ndt_tku
         ndt_cpu
         jsk_rviz_plugins
@@ -76,8 +77,7 @@ catkin_package(
 ###########
 
 include_directories(include ${catkin_INCLUDE_DIRS}
- ${autoware_config_msgs_INCLUDE_DIRS}
- ${autoware_msgs_INCLUDE_DIRS} ${EIGEN3_INCLUDE_DIRS})
+ ${EIGEN3_INCLUDE_DIRS})
 
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
@@ -128,8 +128,6 @@ add_library(ndt_matching_monitor_lib SHARED
         )
 target_include_directories(ndt_matching_monitor_lib PRIVATE
         ${catkin_INCLUDE_DIRS}
-        ${autoware_config_msgs_INCLUDE_DIRS}
-        ${autoware_msgs_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
         )
 add_dependencies(ndt_matching_monitor_lib

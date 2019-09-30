@@ -12,6 +12,7 @@ find_package(catkin REQUIRED COMPONENTS
         pcl_conversions
         velodyne_pointcloud
         message_generation
+        autoware_config_msgs
         )
 
 add_message_files(
@@ -40,7 +41,7 @@ catkin_package(
 ###########
 
 include_directories(include ${catkin_INCLUDE_DIRS}
- ${autoware_config_msgs_INCLUDE_DIRS})
+)
 SET(CMAKE_CXX_FLAGS "-O2 -g -Wall ${CMAKE_CXX_FLAGS}")
 
 add_executable(voxel_grid_filter nodes/voxel_grid_filter/voxel_grid_filter.cpp)

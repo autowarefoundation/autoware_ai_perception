@@ -29,7 +29,6 @@ catkin_package(
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${autoware_msgs_INCLUDE_DIRS}
 )
 
 #naive_motion_predict

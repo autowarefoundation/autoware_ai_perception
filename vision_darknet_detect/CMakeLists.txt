@@ -110,8 +110,6 @@ if (USE_CUDA)
     target_include_directories(vision_darknet_detect_lib PRIVATE
             ${OpenCV_INCLUDE_DIR}
             ${catkin_INCLUDE_DIRS}
-            ${autoware_config_msgs_INCLUDE_DIRS}
-            ${autoware_msgs_INCLUDE_DIRS}
             ${Boost_INCLUDE_DIRS}
             ${CUDA_INCLUDE_DIRS}
             ${PROJECT_SOURCE_DIR}/darknet
@@ -145,8 +143,6 @@ if (USE_CUDA)
     target_include_directories(vision_darknet_detect PRIVATE
             ${CUDA_INCLUDE_DIRS}
             ${catkin_INCLUDE_DIRS}
-            ${autoware_config_msgs_INCLUDE_DIRS}
-            ${autoware_msgs_INCLUDE_DIRS}
             ${PROJECT_SOURCE_DIR}/darknet
             ${PROJECT_SOURCE_DIR}/darknet/src
             ${PROJECT_SOURCE_DIR}/src
@@ -221,8 +217,6 @@ ELSE()
     target_include_directories(vision_darknet_detect_lib PRIVATE
             ${OpenCV_INCLUDE_DIR}
             ${catkin_INCLUDE_DIRS}
-            ${autoware_config_msgs_INCLUDE_DIRS}
-            ${autoware_msgs_INCLUDE_DIRS}
             ${Boost_INCLUDE_DIRS}
             ${PROJECT_SOURCE_DIR}/darknet
             ${PROJECT_SOURCE_DIR}/darknet/src
@@ -251,8 +245,6 @@ ELSE()
 
     target_include_directories(vision_darknet_detect PRIVATE
             ${catkin_INCLUDE_DIRS}
-            ${autoware_config_msgs_INCLUDE_DIRS}
-            ${autoware_msgs_INCLUDE_DIRS}
             ${PROJECT_SOURCE_DIR}/darknet
             ${PROJECT_SOURCE_DIR}/darknet/src
             ${PROJECT_SOURCE_DIR}/src

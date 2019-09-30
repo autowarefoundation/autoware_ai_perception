@@ -72,8 +72,6 @@ if (USE_CUDA AND EXISTS "${SSD_CAFFE_PATH}")
             )
 
     target_include_directories(vision_ssd_detect PRIVATE
-            ${autoware_msgs_INCLUDE_DIRS}
-            ${autoware_config_msgs_INCLUDE_DIRS}
             ${SSD_CAFFE_PATH}/include
             include
             )
