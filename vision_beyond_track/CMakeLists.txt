@@ -32,7 +32,6 @@ include_directories(
         lib
         ${OpenCV_INCLUDE_DIRS}
         ${catkin_INCLUDE_DIRS}
-        ${autoware_msgs_INCLUDE_DIRS}
 )
 
 add_library(
@@ -54,7 +53,6 @@ target_link_libraries(vision_beyond_track
 
 add_dependencies(vision_beyond_track
         ${catkin_EXPORTED_TARGETS}
-        autoware_msgs_generate_messages_cpp
 )
 
 install(TARGETS beyond_track_lib vision_beyond_track

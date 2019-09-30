@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
     grid_map_ros
     grid_map_cv
     grid_map_msgs
+    vector_map
 )
 
 find_package(Qt5Core REQUIRED)
@@ -55,7 +56,6 @@ endif()
 target_include_directories(road_occupancy_processor_lib PRIVATE
     ${OpenCV_INCLUDE_DIR}
     ${catkin_INCLUDE_DIRS}
-    ${vector_map_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     include
@@ -79,7 +79,6 @@ add_executable(road_occupancy_processor
 target_include_directories(road_occupancy_processor PRIVATE
     ${OpenCV_INCLUDE_DIR}
     ${catkin_INCLUDE_DIRS}
-    ${vector_map_INCLUDE_DIRS}
     ${Boost_INCLUDE_DIRS}
     ${PCL_INCLUDE_DIRS}
     include)

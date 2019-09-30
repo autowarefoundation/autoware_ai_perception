@@ -25,7 +25,6 @@ catkin_package(
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
-        ${autoware_msgs_INCLUDE_DIRS}
         nodes/vision_lane_detect
         ${OpenCV_INCLUDE_DIRS}
 )
@@ -41,7 +40,6 @@ target_link_libraries(vision_lane_detect
         )
 add_dependencies(vision_lane_detect
         ${catkin_EXPORTED_TARGETS}
-        autoware_msgs_generate_messages_cpp
         )
 
 install(TARGETS vision_lane_detect

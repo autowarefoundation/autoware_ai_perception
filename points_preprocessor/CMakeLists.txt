@@ -13,6 +13,7 @@ find_package(catkin REQUIRED COMPONENTS
         pcl_conversions
         cv_bridge
         velodyne_pointcloud
+        autoware_config_msgs
         tf
         autoware_health_checker
         )
@@ -49,7 +50,6 @@ link_directories(${YAML_CPP_LIBRARY_DIRS})
 
 include_directories(
         ${catkin_INCLUDE_DIRS}
-        ${autoware_config_msgs_INCLUDE_DIRS}
         include
 )
 

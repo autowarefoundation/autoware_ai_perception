@@ -31,7 +31,6 @@ catkin_package(
 
 include_directories(
   include
-  ${autoware_msgs_INCLUDE_DIRS}
   ${catkin_INCLUDE_DIRS}
 )
 
@@ -44,7 +43,6 @@ target_link_libraries(lidar_fake_perception_node
 )
 add_dependencies(lidar_fake_perception_node
   ${catkin_EXPORTED_TARGETS}
-  autoware_msgs_generate_messages_cpp
 )
 
 install(TARGETS

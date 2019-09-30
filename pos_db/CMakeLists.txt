@@ -32,7 +32,6 @@ if (LIBSSH2_FOUND)
     include_directories(
             include
             ${catkin_INCLUDE_DIRS}
-            ${autoware_msgs_INCLUDE_DIRS}
             ${LIBSSH2_INCLUDE_DIRS}
     )
 

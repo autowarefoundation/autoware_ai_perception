@@ -53,8 +53,6 @@ find_package(OpenGL REQUIRED)
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
-  ${vector_map_INCLUDE_DIRS}
-  ${autoware_msgs_INCLUDE_DIRS}
   ${Eigen3_INCLUDE_DIRS}
 )
 

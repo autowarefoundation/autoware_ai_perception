@@ -74,7 +74,6 @@ endif ()
 target_include_directories(range_vision_fusion_lib PRIVATE
         ${OpenCV_INCLUDE_DIR}
         ${catkin_INCLUDE_DIRS}
-        ${autoware_msgs_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         ${PCL_INCLUDE_DIRS}
         ${EIGEN3_INCLUDE_DIRS}
@@ -102,7 +101,6 @@ add_executable(range_vision_fusion
 target_include_directories(range_vision_fusion PRIVATE
         ${OpenCV_INCLUDE_DIR}
         ${catkin_INCLUDE_DIRS}
-        ${autoware_msgs_INCLUDE_DIRS}
         ${Boost_INCLUDE_DIRS}
         include
         )
