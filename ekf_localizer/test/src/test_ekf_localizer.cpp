@@ -21,27 +21,34 @@
 #include <eigen3/Eigen/Core>
 #include <eigen3/Eigen/LU>
 #include <geometry_msgs/TransformStamped.h>
-#include <geometry_msgs/PoseStamped.h>
 
 #include "ekf_localizer/ekf_localizer.h"
 
 class EKFLocalizerTestSuite : public ::testing::Test
 {
 public:
-  EKFLocalizerTestSuite()
+  EKFLocalizerTestSuite() : nh_(""), pnh_("~")
   {
+    sub_twist = nh_.subscribe("/ekf_twist", 1, &EKFLocalizerTestSuite::callbackTwist, this);
+    sub_pose = nh_.subscribe("/ekf_pose", 1, &EKFLocalizerTestSuite::callbackPose, this);
+    tiemr_ = nh_.createTimer(ros::Duration(0.1), &EKFLocalizerTestSuite::timerCallback, this);
   }
   ~EKFLocalizerTestSuite()
   {
   }
 
-  ros::NodeHandle nh_;
+  ros::NodeHandle nh_, pnh_;
 
-  EKFLocalizer obj_;
   std::string frame_id_a_ = "world";
   std::string frame_id_b_ = "base_link";
 
-  ros::Timer tiemr_ = nh_.createTimer(ros::Duration(0.1), &EKFLocalizerTestSuite::timerCallback, this);
+  ros::Subscriber sub_twist;
+  ros::Subscriber sub_pose;
+
+  ros::Timer tiemr_;
+
+  std::shared_ptr<geometry_msgs::PoseStamped> current_pose_ptr_;
+  std::shared_ptr<geometry_msgs::TwistStamped> current_twist_ptr_;
 
   void timerCallback(const ros::TimerEvent& e)
   {
@@ -67,132 +74,217 @@ public:
     br.sendTransform(sended);
   };
 
-  void getX(Eigen::MatrixXd& X)
+  void callbackPose(const geometry_msgs::PoseStamped::ConstPtr& pose)
   {
-    obj_.ekf_.getLatestX(X);
+    current_pose_ptr_ = std::make_shared<geometry_msgs::PoseStamped>(*pose);
   }
 
-  void getMeasuredPose(const geometry_msgs::PoseStamped* pose)
+  void callbackTwist(const geometry_msgs::TwistStamped::ConstPtr& twist)
   {
-    if (obj_.current_pose_ptr_ == nullptr)
-    {
-      ROS_ERROR("pose pointer is null");
-      pose = nullptr;
-    }
-    else
-    {
-      pose = obj_.current_pose_ptr_.get();
-    }
+    current_twist_ptr_ = std::make_shared<geometry_msgs::TwistStamped>(*twist);
   }
 
-  bool getTransformFromTF_true_expected()
+  void resetCurrentPoseAndTwist()
   {
-    geometry_msgs::TransformStamped ts;
-    return obj_.getTransformFromTF(frame_id_a_, frame_id_b_, ts);
-  };
-  bool getTransformFromTF_false_expected()
-  {
-    geometry_msgs::TransformStamped ts;
-    return obj_.getTransformFromTF("bad_frame1", "bad_frame2", ts);
-  };
+    current_pose_ptr_ = nullptr;
+    current_twist_ptr_ = nullptr;
+  }
 };
-
-/*
- * this test fails due to tf_listener specifications
-TEST_F(EKFLocalizerTestSuite, getTransformFromTF)
-{
-    for (int i = 0; i < 10; ++i)
-    {
-        // to run timer callback
-        ros::spinOnce();
-        ros::Duration(0.1).sleep();
-    }
-    ASSERT_EQ(true, getTransformFromTF_true_expected()) << "appropriate transform, true expected";
-    ASSERT_EQ(false, getTransformFromTF_false_expected()) << "inappropriate transform, false expected";
-}
-*/
 
 TEST_F(EKFLocalizerTestSuite, measurementUpdatePose)
 {
-  ros::Publisher pub_pose = nh_.advertise<geometry_msgs::PoseStamped>("/ndt_pose", 1);
-  geometry_msgs::PoseStamped ndt_pose;
-  ndt_pose.header.frame_id = "world";
-  ndt_pose.pose.position.x = 1.0;
-  ndt_pose.pose.position.y = 2.0;
-  ndt_pose.pose.position.z = 3.0;
-  ndt_pose.pose.orientation.x = 0.0;
-  ndt_pose.pose.orientation.y = 0.0;
-  ndt_pose.pose.orientation.z = 0.0;
-  ndt_pose.pose.orientation.w = 1.0;
-  Eigen::MatrixXd X;
+  EKFLocalizer ekf_;
+
+  ros::Publisher pub_pose = nh_.advertise<geometry_msgs::PoseStamped>("/in_pose", 1);
+  geometry_msgs::PoseStamped in_pose;
+  in_pose.header.frame_id = "world";
+  in_pose.pose.position.x = 1.0;
+  in_pose.pose.position.y = 2.0;
+  in_pose.pose.position.z = 3.0;
+  in_pose.pose.orientation.x = 0.0;
+  in_pose.pose.orientation.y = 0.0;
+  in_pose.pose.orientation.z = 0.0;
+  in_pose.pose.orientation.w = 1.0;
 
   /* test for valid value */
   const double pos_x = 12.3;
-  ndt_pose.pose.position.x = pos_x;  // for vaild value
+  in_pose.pose.position.x = pos_x;  // for vaild value
 
-  for (int i = 0; i < 10; ++i)
+  for (int i = 0; i < 20; ++i)
   {
-    ndt_pose.header.stamp = ros::Time::now();
-    pub_pose.publish(ndt_pose);
+    in_pose.header.stamp = ros::Time::now();
+    pub_pose.publish(in_pose);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
 
-  getX(X);
-  double estimated_pos = X(0, 0);
-  bool is_succeeded = !(isnan(X.array()).any() || isinf(X.array()).any());
+  ASSERT_FALSE(current_pose_ptr_ == nullptr);
+  ASSERT_FALSE(current_twist_ptr_ == nullptr);
+
+  double ekf_x = current_pose_ptr_->pose.position.x;
+  bool is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
-  ASSERT_TRUE((estimated_pos - pos_x) < 0.1) << "pos x should be close to " << pos_x;
+  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1) << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
 
   /* test for invalid value */
-  ndt_pose.pose.position.x = NAN;  // check for invalid values
+  in_pose.pose.position.x = NAN;  // check for invalid values
   for (int i = 0; i < 10; ++i)
   {
-    ndt_pose.header.stamp = ros::Time::now();
-    pub_pose.publish(ndt_pose);
+    in_pose.header.stamp = ros::Time::now();
+    pub_pose.publish(in_pose);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
-  getX(X);
-  is_succeeded = !(isnan(X.array()).any() || isinf(X.array()).any());
+  is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
+
+  resetCurrentPoseAndTwist();
 }
 
 TEST_F(EKFLocalizerTestSuite, measurementUpdateTwist)
 {
-  ros::Publisher pub_twist = nh_.advertise<geometry_msgs::TwistStamped>("/can_twist", 1);
-  geometry_msgs::TwistStamped can_twist;
-  can_twist.header.frame_id = "base_link";
-  Eigen::MatrixXd X;
+  EKFLocalizer ekf_;
+
+  ros::Publisher pub_twist = nh_.advertise<geometry_msgs::TwistStamped>("/in_twist", 1);
+  geometry_msgs::TwistStamped in_twist;
+  in_twist.header.frame_id = "base_link";
 
   /* test for valid value */
   const double vx = 12.3;
-  can_twist.twist.linear.x = vx;  // for vaild value
-  for (int i = 0; i < 10; ++i)
+  in_twist.twist.linear.x = vx;  // for vaild value
+  for (int i = 0; i < 20; ++i)
   {
-    can_twist.header.stamp = ros::Time::now();
-    pub_twist.publish(can_twist);
+    in_twist.header.stamp = ros::Time::now();
+    pub_twist.publish(in_twist);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
 
-  getX(X);
-  double estimated_vx = X(4, 0);
-  bool is_succeeded = !(isnan(X.array()).any() || isinf(X.array()).any());
+  ASSERT_FALSE(current_pose_ptr_ == nullptr);
+  ASSERT_FALSE(current_twist_ptr_ == nullptr);
+
+  double ekf_vx = current_twist_ptr_->twist.linear.x;
+  bool is_succeeded = !(std::isnan(ekf_vx) || std::isinf(ekf_vx));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
-  ASSERT_TRUE((estimated_vx - vx) < 0.1) << "vel x should be close to " << vx;
+  ASSERT_TRUE(std::fabs(ekf_vx - vx) < 0.1) << "ekf vel x: " << ekf_vx << ", should be close to " << vx;
 
   /* test for invalid value */
-  can_twist.twist.linear.x = NAN;  // check for invalid values
+  in_twist.twist.linear.x = NAN;  // check for invalid values
   for (int i = 0; i < 10; ++i)
   {
-    can_twist.header.stamp = ros::Time::now();
-    pub_twist.publish(can_twist);
+    in_twist.header.stamp = ros::Time::now();
+    pub_twist.publish(in_twist);
     ros::spinOnce();
     ros::Duration(0.1).sleep();
   }
-  getX(X);
-  is_succeeded = !(isnan(X.array()).any() || isinf(X.array()).any());
+
+  ekf_vx = current_twist_ptr_->twist.linear.x;
+  is_succeeded = !(std::isnan(ekf_vx) || std::isinf(ekf_vx));
+  ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
+
+  resetCurrentPoseAndTwist();
+}
+
+TEST_F(EKFLocalizerTestSuite, measurementUpdatePoseWithCovariance)
+{
+
+  pnh_.setParam("use_pose_with_covariance", true);
+  ros::Duration(0.2).sleep();
+  EKFLocalizer ekf_;
+
+  ros::Publisher pub_pose = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("/in_pose_with_covariance", 1);
+  geometry_msgs::PoseWithCovarianceStamped in_pose;
+  in_pose.header.frame_id = "world";
+  in_pose.pose.pose.position.x = 1.0;
+  in_pose.pose.pose.position.y = 2.0;
+  in_pose.pose.pose.position.z = 3.0;
+  in_pose.pose.pose.orientation.x = 0.0;
+  in_pose.pose.pose.orientation.y = 0.0;
+  in_pose.pose.pose.orientation.z = 0.0;
+  in_pose.pose.pose.orientation.w = 1.0;
+  for (int i = 0; i < 36; ++i)
+  {
+    in_pose.pose.covariance[i] = 0.1;
+  }
+
+  /* test for valid value */
+  const double pos_x = 99.3;
+  in_pose.pose.pose.position.x = pos_x;  // for vaild value
+
+  for (int i = 0; i < 20; ++i)
+  {
+    in_pose.header.stamp = ros::Time::now();
+    pub_pose.publish(in_pose);
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+
+  ASSERT_FALSE(current_pose_ptr_ == nullptr);
+  ASSERT_FALSE(current_twist_ptr_ == nullptr);
+
+  double ekf_x = current_pose_ptr_->pose.position.x;
+  bool is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
+  ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
+  ASSERT_TRUE(std::fabs(ekf_x - pos_x) < 0.1) << "ekf pos x: " << ekf_x << " should be close to " << pos_x;
+
+  /* test for invalid value */
+  in_pose.pose.pose.position.x = NAN;  // check for invalid values
+  for (int i = 0; i < 10; ++i)
+  {
+    in_pose.header.stamp = ros::Time::now();
+    pub_pose.publish(in_pose);
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+  is_succeeded = !(std::isnan(ekf_x) || std::isinf(ekf_x));
+  ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
+
+  resetCurrentPoseAndTwist();
+}
+
+TEST_F(EKFLocalizerTestSuite, measurementUpdateTwistWithCovariance)
+{
+  EKFLocalizer ekf_;
+
+  ros::Publisher pub_twist = nh_.advertise<geometry_msgs::TwistWithCovarianceStamped>("/in_twist_with_covariance", 1);
+  geometry_msgs::TwistWithCovarianceStamped in_twist;
+  in_twist.header.frame_id = "base_link";
+
+  /* test for valid value */
+  const double vx = 12.3;
+  in_twist.twist.twist.linear.x = vx;  // for vaild value
+  for (int i = 0; i < 36; ++i)
+  {
+    in_twist.twist.covariance[i] = 0.1;
+  }
+  for (int i = 0; i < 10; ++i)
+  {
+    in_twist.header.stamp = ros::Time::now();
+    pub_twist.publish(in_twist);
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+
+  ASSERT_FALSE(current_pose_ptr_ == nullptr);
+  ASSERT_FALSE(current_twist_ptr_ == nullptr);
+
+  double ekf_vx = current_twist_ptr_->twist.linear.x;
+  bool is_succeeded = !(std::isnan(ekf_vx) || std::isinf(ekf_vx));
+  ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
+  ASSERT_TRUE((ekf_vx - vx) < 0.1) << "vel x should be close to " << vx;
+
+  /* test for invalid value */
+  in_twist.twist.twist.linear.x = NAN;  // check for invalid values
+  for (int i = 0; i < 10; ++i)
+  {
+    in_twist.header.stamp = ros::Time::now();
+    pub_twist.publish(in_twist);
+    ros::spinOnce();
+    ros::Duration(0.1).sleep();
+  }
+
+  ekf_vx = current_twist_ptr_->twist.linear.x;
+  is_succeeded = !(std::isnan(ekf_vx) || std::isinf(ekf_vx));
   ASSERT_EQ(true, is_succeeded) << "ekf result includes invalid value.";
 }
 

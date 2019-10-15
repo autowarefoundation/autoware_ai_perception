@@ -23,6 +23,7 @@
 #include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/TwistStamped.h>
+#include <geometry_msgs/TwistWithCovarianceStamped.h>
 #include <geometry_msgs/TransformStamped.h>
 #include <std_msgs/Float64.h>
 #include <std_msgs/Float64MultiArray.h>
@@ -41,11 +42,23 @@ public:
   ~EKFLocalizer();
 
 private:
-  ros::NodeHandle nh_, pnh_;
-  ros::Publisher pub_pose_, pub_pose_cov_, pub_twist_, pub_debug_, pub_measured_pose_, pub_yaw_bias_;
-  ros::Subscriber sub_initialpose_, sub_pose_, sub_vehicle_status_, sub_twist_, sub_pose_with_cov_;
-  ros::Timer timer_control_, timer_tf_;
-  tf2_ros::TransformBroadcaster tf_br_;
+  ros::NodeHandle nh_;                   //!< @brief ros public node handler
+  ros::NodeHandle pnh_;                  //!< @brief  ros private node handler
+  ros::Publisher pub_pose_;              //!< @brief ekf estimated pose publisher
+  ros::Publisher pub_pose_cov_;          //!< @brief estimated ekf pose with covariance publisher
+  ros::Publisher pub_twist_;             //!< @brief ekf estimated twist publisher
+  ros::Publisher pub_twist_cov_;         //!< @brief ekf estimated twist with covariance publisher
+  ros::Publisher pub_debug_;             //!< @brief debug info publisher
+  ros::Publisher pub_measured_pose_;     //!< @brief debug measurement pose publisher
+  ros::Publisher pub_yaw_bias_;          //!< @brief ekf estimated yaw bias publisher
+  ros::Subscriber sub_initialpose_;      //!< @brief initial pose subscriber
+  ros::Subscriber sub_pose_;             //!< @brief measurement pose subscriber
+  ros::Subscriber sub_twist_;            //!< @brief measurement twist subscriber
+  ros::Subscriber sub_pose_with_cov_;    //!< @brief measurement pose with covariance subscriber
+  ros::Subscriber sub_twist_with_cov_;   //!< @brief measurement twist with covariance subscriber
+  ros::Timer timer_control_;             //!< @brief time for ekf calculation callback
+  ros::Timer timer_tf_;                  //!< @brief timer to send transform
+  tf2_ros::TransformBroadcaster tf_br_;  //!< @brief tf broadcaster
 
   TimeDelayKalmanFilter ekf_;  //!< @brief  extended kalman filter instance.
 
@@ -72,6 +85,7 @@ private:
   double pose_stddev_y_;    //!< @brief  standard deviation for pose position y [m]
   double pose_stddev_yaw_;  //!< @brief  standard deviation for pose position yaw [rad]
   bool use_pose_with_covariance_;  //!< @brief  use covariance in pose_with_covarianve message
+  bool use_twist_with_covariance_; //!< @brief  use covariance in twist_with_covarianve message
 
   /* twist */
   double twist_additional_delay_;  //!< @brief  compensated delay time = (twist.header.stamp - now) + additional_delay
@@ -103,6 +117,7 @@ private:
   geometry_msgs::PoseStamped current_ekf_pose_;                     //!< @brief current estimated pose
   geometry_msgs::TwistStamped current_ekf_twist_;                   //!< @brief current estimated twist
   boost::array<double, 36ul> current_pose_covariance_;
+  boost::array<double, 36ul> current_twist_covariance_;
 
   /**
    * @brief computes update & prediction of EKF for each ekf_dt_[s] time
@@ -128,6 +143,11 @@ private:
    * @brief set poseWithCovariance measurement
    */
   void callbackPoseWithCovariance(const geometry_msgs::PoseWithCovarianceStamped::ConstPtr& msg);
+
+  /**
+   * @brief set twistWithCovariance measurement
+   */
+  void callbackTwistWithCovariance(const geometry_msgs::TwistWithCovarianceStamped::ConstPtr& msg);
 
   /**
    * @brief set initial_pose to current EKF pose
@@ -186,9 +206,9 @@ private:
   void setCurrentResult();
 
   /**
-   * @brief get transform from frame_id
+   * @brief publish current EKF estimation result
    */
-  void publishEstimatedPose();
+  void publishEstimateResult();
 
   /**
    * @brief for debug
