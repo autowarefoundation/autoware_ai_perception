@@ -50,16 +50,16 @@ private:
   std::vector<UKF> targets_;
 
   // probabilistic data association params
-  double gating_thres_;
+  double gating_threshold_;
   double gate_probability_;
   double detection_probability_;
 
   // object association param
-  int life_time_thres_;
+  int life_time_threshold_;
 
   // static classification param
-  double static_velocity_thres_;
-  int static_num_history_thres_;
+  double static_velocity_threshold_;
+  int static_num_history_threshold_;
 
   // switch sukf and ImmUkfPda
   bool use_sukf_;
@@ -73,13 +73,13 @@ private:
   std::string result_file_path_;
 
   // prevent explode param for ukf
-  double prevent_explosion_thres_;
+  double prevent_explosion_threshold_;
 
   // for vectormap assisted tarcking
   bool use_vectormap_;
   bool has_subscribed_vectormap_;
-  double lane_direction_chi_thres_;
-  double nearest_lane_distance_thres_;
+  double lane_direction_chi_threshold_;
+  double nearest_lane_distance_threshold_;
   std::string vectormap_frame_;
   vector_map::VectorMap vmap_;
   std::vector<vector_map_msgs::Lane> lanes_;

@@ -31,14 +31,14 @@ Launch file available parameters for `imm_ukf_pda_tracker`
 ----------|-----|--------
 |`tracker_input_topic`|*String* |Input topic(type: autoware_msgs::CloudClusterArray). Default `/cloud cluster`.|
 |`tracker_output_topic`|*String*|Output topic(type: autoware_msgs::CloudClusterArray). Default `/tracking_cluster_array`.|
-|`life_time_thres`|*Int*|The minimum frames for targets to be visualized. Default `8`.|
-|`gating_thres`|*Double*|The value of gate threshold for measurement validation. Default `9.22`.|
+|`life_time_threshold`|*Int*|The minimum frames for targets to be visualized. Default `8`.|
+|`gating_threshold`|*Double*|The value of gate threshold for measurement validation. Default `9.22`.|
 |`gate_probability`|*Double*|The probability that the gate contains the true measurement. Default `0.99`.|
 |`detection_probability`|*Double*|The probability that a target is detected. Default `0.9`.|
 |`merge_distance_threshold`|*Double*|The distance threshold for associating bounding box over frames. Default `0.5`.|
-|`static_velocity_thres`|*Double*|The velocity threshold for classifying static/dynamic. Default `0.5`.|
-|`static_num_history_thres`|*Int*|The amount of frames the velocity is averaged over to compare to `static_velocity_thres`. Default `3`.|
-|`prevent_explosion_thres`|*Double*|The threshold for stopping kalman filter update. Default `1000`.|
+|`static_velocity_threshold`|*Double*|The velocity threshold for classifying static/dynamic. Default `0.5`.|
+|`static_num_history_threshold`|*Int*|The amount of frames the velocity is averaged over to compare to `static_velocity_threshold`. Default `3`.|
+|`prevent_explosion_threshold`|*Double*|The threshold for stopping kalman filter update. Default `1000`.|
 |`use_sukf`|*bool*|Use standard kalman filter. Default `false`.|
 
 Launch file available parameters for `visualize_detected_objects`

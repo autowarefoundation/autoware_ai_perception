@@ -15,7 +15,7 @@
  */
 
 
-#include "imm_ukf_pda.h"
+#include <imm_ukf_pda/imm_ukf_pda.h>
 
 ImmUkfPda::ImmUkfPda()
   : target_id_(0)
@@ -26,20 +26,20 @@ ImmUkfPda::ImmUkfPda()
   private_nh_("~")
 {
   private_nh_.param<std::string>("tracking_frame", tracking_frame_, "world");
-  private_nh_.param<int>("life_time_thres", life_time_thres_, 8);
-  private_nh_.param<double>("gating_thres", gating_thres_, 9.22);
+  private_nh_.param<int>("life_time_threshold", life_time_threshold_, 8);
+  private_nh_.param<double>("gating_threshold", gating_threshold_, 9.22);
   private_nh_.param<double>("gate_probability", gate_probability_, 0.99);
   private_nh_.param<double>("detection_probability", detection_probability_, 0.9);
-  private_nh_.param<double>("static_velocity_thres", static_velocity_thres_, 0.5);
-  private_nh_.param<int>("static_num_history_thres", static_num_history_thres_, 3);
-  private_nh_.param<double>("prevent_explosion_thres", prevent_explosion_thres_, 1000);
+  private_nh_.param<double>("static_velocity_threshold", static_velocity_threshold_, 0.5);
+  private_nh_.param<int>("static_num_history_threshold", static_num_history_threshold_, 3);
+  private_nh_.param<double>("prevent_explosion_threshold", prevent_explosion_threshold_, 1000);
   private_nh_.param<double>("merge_distance_threshold", merge_distance_threshold_, 0.5);
   private_nh_.param<bool>("use_sukf", use_sukf_, false);
 
   // for vectormap assisted tracking
   private_nh_.param<bool>("use_vectormap", use_vectormap_, false);
-  private_nh_.param<double>("lane_direction_chi_thres", lane_direction_chi_thres_, 2.71);
-  private_nh_.param<double>("nearest_lane_distance_thres", nearest_lane_distance_thres_, 1.0);
+  private_nh_.param<double>("lane_direction_chi_threshold", lane_direction_chi_threshold_, 2.71);
+  private_nh_.param<double>("nearest_lane_distance_threshold", nearest_lane_distance_threshold_, 1.0);
   private_nh_.param<std::string>("vectormap_frame", vectormap_frame_, "map");
 
   // rosparam for benchmark
@@ -207,7 +207,7 @@ void ImmUkfPda::measurementValidation(const autoware_msgs::DetectedObjectArray& 
     Eigen::VectorXd diff = meas - max_det_z;
     double nis = diff.transpose() * max_det_s.inverse() * diff;
 
-    if (nis < gating_thres_)
+    if (nis < gating_threshold_)
     {
       if (nis < smallest_nis)
       {
@@ -253,7 +253,7 @@ bool ImmUkfPda::updateDirection(const double smallest_nis, const autoware_msgs::
   {
     return use_lane_direction;
   }
-  target.checkLaneDirectionAvailability(out_object, lane_direction_chi_thres_, use_sukf_);
+  target.checkLaneDirectionAvailability(out_object, lane_direction_chi_threshold_, use_sukf_);
   if (target.is_direction_cv_available_ || target.is_direction_ctrv_available_)
   {
     use_lane_direction = true;
@@ -284,7 +284,7 @@ bool ImmUkfPda::storeObjectWithNearestLaneDirection(const autoware_msgs::Detecte
   }
 
   bool success = false;
-  if (min_dist < nearest_lane_distance_thres_)
+  if (min_dist < nearest_lane_distance_threshold_)
   {
     success = true;
   }
@@ -460,7 +460,7 @@ bool ImmUkfPda::probabilisticDataAssociation(const autoware_msgs::DetectedObject
   }
 
   // prevent ukf not to explode
-  if (std::isnan(det_s) || det_s > prevent_explosion_thres_)
+  if (std::isnan(det_s) || det_s > prevent_explosion_threshold_)
   {
     target.tracking_num_ = TrackingState::Die;
     success = false;
@@ -526,19 +526,19 @@ void ImmUkfPda::staticClassification()
     // targets_[i].x_merge_(2) is referred for estimated velocity
     double current_velocity = std::abs(targets_[i].x_merge_(2));
     targets_[i].vel_history_.push_back(current_velocity);
-    if (targets_[i].tracking_num_ == TrackingState::Stable && targets_[i].lifetime_ > life_time_thres_)
+    if (targets_[i].tracking_num_ == TrackingState::Stable && targets_[i].lifetime_ > life_time_threshold_)
     {
       int index = 0;
       double sum_vel = 0;
       double avg_vel = 0;
-      for (auto rit = targets_[i].vel_history_.rbegin(); index < static_num_history_thres_; ++rit)
+      for (auto rit = targets_[i].vel_history_.rbegin(); index < static_num_history_threshold_; ++rit)
       {
         index++;
         sum_vel += *rit;
       }
-      avg_vel = double(sum_vel / static_num_history_thres_);
+      avg_vel = double(sum_vel / static_num_history_threshold_);
 
-      if(avg_vel < static_velocity_thres_ && current_velocity < static_velocity_thres_)
+      if(avg_vel < static_velocity_threshold_ && current_velocity < static_velocity_threshold_)
       {
         targets_[i].is_static_ = true;
       }
@@ -797,8 +797,8 @@ void ImmUkfPda::tracker(const autoware_msgs::DetectedObjectArray& input,
       continue;
     }
     // prevent ukf not to explode
-    if (targets_[i].p_merge_.determinant() > prevent_explosion_thres_ ||
-        targets_[i].p_merge_(4, 4) > prevent_explosion_thres_)
+    if (targets_[i].p_merge_.determinant() > prevent_explosion_threshold_ ||
+        targets_[i].p_merge_(4, 4) > prevent_explosion_threshold_)
     {
       targets_[i].tracking_num_ = TrackingState::Die;
       continue;
@@ -813,7 +813,7 @@ void ImmUkfPda::tracker(const autoware_msgs::DetectedObjectArray& input,
       continue;
     }
 
-    targets_[i].update(use_sukf_, detection_probability_, gate_probability_, gating_thres_, object_vec);
+    targets_[i].update(use_sukf_, detection_probability_, gate_probability_, gating_threshold_, object_vec);
   }
   // end UKF process
 
