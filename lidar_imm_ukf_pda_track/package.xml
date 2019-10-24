@@ -10,8 +10,11 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>autoware_msgs</depend>
+  <depend>amathutils_lib</depend>
   <depend>pcl_ros</depend>
   <depend>roscpp</depend>
+  <depend>roslint</depend>
   <depend>tf</depend>
   <depend>vector_map</depend>
+  <depend>lanelet2_extension</depend>
 </package>

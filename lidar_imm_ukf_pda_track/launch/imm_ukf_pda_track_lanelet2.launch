@@ -16,13 +16,13 @@
   <arg name="use_sukf" default="false" />
 
   <!-- Vectormap -->
-  <arg name="use_map_info" default="false" />
+  <arg name="use_map_info" default="false"/>
   <arg name="lane_direction_chi_threshold" default="2.71" />
   <arg name="nearest_lane_distance_threshold" default="1.0" />
-  <arg name="vectormap_frame" default="/map" />
+  <arg name="map_frame" default="/map" />
 
   <!-- rosrun lidar_tracker euclidean_cluster _points_node:="" -->
-  <node pkg="imm_ukf_pda_track" type="imm_ukf_pda" name="imm_ukf_pda_01" output="screen">
+  <node pkg="imm_ukf_pda_track" type="imm_ukf_pda_lanelet2" name="imm_ukf_pda_01_lanelet2" output="screen">
     <param name="gating_threshold" value="$(arg gating_threshold)" />
     <param name="gate_probability" value="$(arg gate_probability)" />
     <param name="detection_probability" value="$(arg detection_probability)" />
@@ -33,9 +33,9 @@
     <param name="lane_direction_chi_threshold" value="$(arg lane_direction_chi_threshold)" />
     <param name="nearest_lane_distance_threshold" value="$(arg nearest_lane_distance_threshold)" />
     <param name="tracking_frame" value="$(arg tracking_frame)" />
-    <param name="vectormap_frame" value="$(arg vectormap_frame)" />
+    <param name="map_frame" value="$(arg map_frame)" />
     <param name="use_sukf" value="$(arg use_sukf)" />
-    <param name="use_vectormap" value="$(arg use_map_info)" />
+    <param name="use_map_info" value="$(arg use_map_info)" />
     <param name="merge_distance_threshold" value="$(arg merge_distance_threshold)" />
 
     <remap from="detection/fusion_tools/objects" to="$(arg tracker_input_topic)" />

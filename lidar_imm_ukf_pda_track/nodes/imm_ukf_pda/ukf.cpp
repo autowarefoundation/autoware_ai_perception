@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "ukf.h"
+#include <imm_ukf_pda/ukf.h>
 
 /**
 * Initializes Unscented Kalman filter
@@ -475,18 +475,18 @@ void UKF::findMaxZandS(Eigen::VectorXd& max_det_z, Eigen::MatrixXd& max_det_s)
   }
 }
 
-void UKF::updateEachMotion(const double detection_probability, const double gate_probability, const double gating_thres,
+void UKF::updateEachMotion(const double detection_probability, const double gate_probability, const double gating_threshold,
                            const std::vector<autoware_msgs::DetectedObject>& object_vec,
                            std::vector<double>& lambda_vec)
 {
   // calculating association probability
   double num_meas = object_vec.size();
-  double b = 2 * num_meas * (1 - detection_probability * gate_probability) / (gating_thres * detection_probability);
+  double b = 2 * num_meas * (1 - detection_probability * gate_probability) / (gating_threshold * detection_probability);
 
   Eigen::VectorXd max_det_z;
   Eigen::MatrixXd max_det_s;
   findMaxZandS(max_det_z, max_det_s);
-  double Vk = M_PI * sqrt(gating_thres * max_det_s.determinant());
+  double Vk = M_PI * sqrt(gating_threshold * max_det_s.determinant());
 
   for (int motion_ind = 0; motion_ind < num_motion_model_; motion_ind++)
   {
@@ -746,7 +746,7 @@ void UKF::updateSUKF(const std::vector<autoware_msgs::DetectedObject>& object_ve
   uppateForCTRV();
 }
 
-void UKF::updateIMMUKF(const double detection_probability, const double gate_probability, const double gating_thres,
+void UKF::updateIMMUKF(const double detection_probability, const double gate_probability, const double gating_threshold,
                        const std::vector<autoware_msgs::DetectedObject>& object_vec)
 {
   /*****************************************************************************
@@ -759,7 +759,7 @@ void UKF::updateIMMUKF(const double detection_probability, const double gate_pro
 
   // update state varibale x and state covariance p
   std::vector<double> lambda_vec;
-  updateEachMotion(detection_probability, gate_probability, gating_thres, object_vec, lambda_vec);
+  updateEachMotion(detection_probability, gate_probability, gating_threshold, object_vec, lambda_vec);
   /*****************************************************************************
   *  IMM Merge Step
   ****************************************************************************/
@@ -1287,14 +1287,14 @@ double UKF::calculateNIS(const autoware_msgs::DetectedObject& in_object, const i
 }
 
 bool UKF::isLaneDirectionAvailable(const autoware_msgs::DetectedObject& in_object, const int motion_ind,
-                                   const double lane_direction_chi_thres)
+                                   const double lane_direction_chi_threshold)
 {
   predictionLidarMeasurement(motion_ind, num_lidar_direction_state_);
 
   double lidar_direction_nis = calculateNIS(in_object, motion_ind);
 
   bool is_direction_available = false;
-  if (lidar_direction_nis < lane_direction_chi_thres)
+  if (lidar_direction_nis < lane_direction_chi_threshold)
   {
     is_direction_available = true;
   }
@@ -1302,16 +1302,16 @@ bool UKF::isLaneDirectionAvailable(const autoware_msgs::DetectedObject& in_objec
 }
 
 void UKF::checkLaneDirectionAvailability(const autoware_msgs::DetectedObject& in_object,
-                                         const double lane_direction_chi_thres, const bool use_sukf)
+                                         const double lane_direction_chi_threshold, const bool use_sukf)
 {
   if (use_sukf)
   {
-    is_direction_ctrv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CTRV, lane_direction_chi_thres);
+    is_direction_ctrv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CTRV, lane_direction_chi_threshold);
   }
   else
   {
-    is_direction_cv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CV, lane_direction_chi_thres);
-    is_direction_ctrv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CTRV, lane_direction_chi_thres);
+    is_direction_cv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CV, lane_direction_chi_threshold);
+    is_direction_ctrv_available_ = isLaneDirectionAvailable(in_object, MotionModel::CTRV, lane_direction_chi_threshold);
   }
 }
 
@@ -1328,7 +1328,7 @@ void UKF::prediction(const bool use_sukf, const bool has_subscribed_vectormap, c
 }
 
 void UKF::update(const bool use_sukf, const double detection_probability, const double gate_probability,
-                 const double gating_thres, const std::vector<autoware_msgs::DetectedObject>& object_vec)
+                 const double gating_threshold, const std::vector<autoware_msgs::DetectedObject>& object_vec)
 {
   if (use_sukf)
   {
@@ -1336,6 +1336,6 @@ void UKF::update(const bool use_sukf, const double detection_probability, const 
   }
   else
   {
-    updateIMMUKF(detection_probability, gate_probability, gating_thres, object_vec);
+    updateIMMUKF(detection_probability, gate_probability, gating_threshold, object_vec);
   }
 }
