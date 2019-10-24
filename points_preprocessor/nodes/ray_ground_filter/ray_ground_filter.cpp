@@ -358,7 +358,7 @@ void RayGroundFilter::Run()
 
   node_handle_.param("radial_divider_angle", radial_divider_angle_, 0.1); //1 degree default
   ROS_INFO("radial_divider_angle[deg]: %f", radial_divider_angle_);
-  node_handle_.param("concentric_divider_distance", concentric_divider_distance_, 0.01);//0.1 meters default
+  node_handle_.param("concentric_divider_distance", concentric_divider_distance_, 0.0);//0.0 meters default
   ROS_INFO("concentric_divider_distance[meters]: %f", concentric_divider_distance_);
   node_handle_.param("min_height_threshold", min_height_threshold_, 0.05);//0.05 meters default
   ROS_INFO("min_height_threshold[meters]: %f", min_height_threshold_);
