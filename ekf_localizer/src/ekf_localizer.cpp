@@ -603,9 +603,10 @@ void EKFLocalizer::measurementUpdateTwist(const geometry_msgs::TwistStamped& twi
   /* Gate */
   Eigen::MatrixXd y_ekf(dim_y, 1);
   y_ekf << ekf_.getXelement(delay_step * dim_x_ + IDX::VX), ekf_.getXelement(delay_step * dim_x_ + IDX::WZ);
-  Eigen::MatrixXd P_curr;
+  Eigen::MatrixXd P_curr, P_y;
   ekf_.getLatestP(P_curr);
-  if (!mahalanobisGate(pose_gate_dist_, y_ekf, y, P_curr.block(4, 4, dim_y, dim_y)))
+  P_y = P_curr.block(4, 4, dim_y, dim_y);
+  if (!mahalanobisGate(twist_gate_dist_, y_ekf, y, P_y))
   {
     ROS_WARN_DELAYED_THROTTLE(2.0, "[EKF] Twist measurement update, mahalanobis distance is over limit. ignore "
                                    "measurement data.");
