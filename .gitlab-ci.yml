@@ -10,17 +10,10 @@ variables:
   before_script:
     - mkdir -p src_tmp/$CI_PROJECT_NAME && mv `find -maxdepth 1 -not -name . -not -name src_tmp -not -name $VCS_FILE` src_tmp/$CI_PROJECT_NAME && mv src_tmp/ src/
     - sudo apt-get update
-    - sudo apt-get install -y libarmadillo-dev libglew-dev libssh2-1-dev python-flask python-requests wget
+    - sudo apt-get install -y libarmadillo-dev libglew-dev libssh2-1-dev python-flask python-requests wget lcov
     - sudo apt-get install -y python3-pip python3-setuptools python3-colcon-common-extensions python3-vcstool
     # Update setuptools from PyPI because the version Ubuntu ships with is too old
     - pip3 install -U setuptools
-    # Install lcov from the Ubuntu package. We need 1.13 at least.
-    - $INSTALL_LCOV
-    - $INSTALL_LCOV2
-    - $INSTALL_LCOV3
-    - $INSTALL_LCOV4
-    - $INSTALL_LCOV5
-    - $INSTALL_LCOV6
     - vcs validate < $VCS_FILE
     - vcs import src/ < $VCS_FILE
     - rosdep update
@@ -104,42 +97,15 @@ variables:
     - merge_requests
     - master
 
-build_kinetic:
-  stage: build
-  image: autoware/autoware:bleedingedge-kinetic-base
-  variables:
-    INSTALL_LCOV: git clone https://github.com/linux-test-project/lcov.git
-    INSTALL_LCOV2: cd lcov
-    INSTALL_LCOV3: git checkout v1.13
-    INSTALL_LCOV4: sudo make install 
-    INSTALL_LCOV5: cd ..
-    INSTALL_LCOV6: rm -r lcov
-  <<: *build_common
-
 build_melodic:
   stage: build
   image: autoware/autoware:bleedingedge-melodic-base
-  variables:
-    INSTALL_LCOV: sudo apt install -y lcov
   <<: *build_common
-
-build_kinetic_cuda:
-  stage: build
-  image: autoware/autoware:bleedingedge-kinetic-base-cuda
-  <<: *build_cuda
 
 build_melodic_cuda:
   stage: build
   image: autoware/autoware:bleedingedge-melodic-base-cuda
   <<: *build_cuda
-
-build_kinetic_cross:
-  stage: build
-  image: autoware/build:${AUTOWARE_CROSS_TARGET_PLATFORM}-kinetic-bleedingedge
-  variables:
-    ROS_DISTRO: kinetic
-    <<: *build_cross_vars
-  <<: *build_cross_common
 
 build_melodic_cross:
   stage: build
@@ -153,7 +119,6 @@ pages:
   stage: deploy
   image: alpine
   dependencies:
-    - build_kinetic
     - build_melodic
   script:
     - BRANCH_NAME="$(echo $CI_COMMIT_REF_NAME | sed 's/\//_/g')"
