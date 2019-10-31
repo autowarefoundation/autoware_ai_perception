@@ -1,0 +1,3 @@
+<launch>
+  <test test-name="vel_pose_diff_checker-test" pkg="vel_pose_diff_checker" type="vel_pose_diff_checker-test" name="test"/>
+</launch>
