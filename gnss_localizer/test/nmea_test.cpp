@@ -49,9 +49,9 @@ TEST(Nmea2TfPose, ggaTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -81305263.475);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, 5958827.35862);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.z, 545.4);
+  ASSERT_FLOAT_EQ(-81305263.475,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(5958827.35862,nmeah.rcvd_msg.pose.position.y);
+  ASSERT_FLOAT_EQ(545.4,nmeah.rcvd_msg.pose.position.z);
 
   msg.sentence = "$GPGGA,0,90.000,N,90.000,W,1,08,0.9,545.4,M,46.9,M,,*47";
   pub.publish(msg);
@@ -61,9 +61,9 @@ TEST(Nmea2TfPose, ggaTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -88147539.5932);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, 7153952.71132);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.z, 545.4);
+  ASSERT_FLOAT_EQ(-90207689.8924,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(7519179.29268,nmeah.rcvd_msg.pose.position.y);
+  ASSERT_FLOAT_EQ(545.4,nmeah.rcvd_msg.pose.position.z);
 
   msg.sentence = "$GPGGA,0,90.000,S,90.000,E,1,08,0.9,545.4,M,46.9,M,,*47";
   pub.publish(msg);
@@ -73,9 +73,9 @@ TEST(Nmea2TfPose, ggaTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -81556822.5527);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, -9521462.31412);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.z, 545.4);
+  ASSERT_FLOAT_EQ(-81305263.475,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(-13929115.5907,nmeah.rcvd_msg.pose.position.y);
+  ASSERT_FLOAT_EQ(545.4,nmeah.rcvd_msg.pose.position.z);
 
   msg.sentence = "$GPGGA,0,90.000,S,90.000,W,1,08,0.9,545.4,M,46.9,M,,*47";
   pub.publish(msg);
@@ -85,9 +85,9 @@ TEST(Nmea2TfPose, ggaTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -88427148.9006);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, -10187013.6867);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.z, 545.4);
+  ASSERT_FLOAT_EQ(-90207689.8924,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(-15489467.5247,nmeah.rcvd_msg.pose.position.y);
+  ASSERT_FLOAT_EQ(545.4,nmeah.rcvd_msg.pose.position.z);
 }
 
 TEST(Nmea2TfPose, rmcTest)
@@ -119,8 +119,8 @@ TEST(Nmea2TfPose, rmcTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -81305263.475);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, 5958827.35862);
+  ASSERT_FLOAT_EQ(-81305263.475,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(5958827.35862,nmeah.rcvd_msg.pose.position.y);
 
   msg.sentence = "$GPRMC,0,A,90.000,N,90.000,W,022.4,084.4,230394,003.1,W*6A";
   pub.publish(msg);
@@ -130,8 +130,8 @@ TEST(Nmea2TfPose, rmcTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -88147539.5932);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, 7153952.71132);
+  ASSERT_FLOAT_EQ(-90207689.8924,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(7519179.29268,nmeah.rcvd_msg.pose.position.y);
 
   msg.sentence = "$GPRMC,0,A,90.000,S,90.000,E,022.4,084.4,230394,003.1,W*6A";
   pub.publish(msg);
@@ -141,8 +141,8 @@ TEST(Nmea2TfPose, rmcTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -81556822.5527);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, -9521462.31412);
+  ASSERT_FLOAT_EQ(-81305263.475,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(-13929115.5907,nmeah.rcvd_msg.pose.position.y);
 
   msg.sentence = "$GPRMC,0,A,90.000,S,90.000,W,022.4,084.4,230394,003.1,W*6A";
   pub.publish(msg);
@@ -152,8 +152,8 @@ TEST(Nmea2TfPose, rmcTest)
 
   ros::spinOnce();
 
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.x, -88427148.9006);
-  ASSERT_FLOAT_EQ(nmeah.rcvd_msg.pose.position.y, -10187013.6867);
+  ASSERT_FLOAT_EQ(-90207689.8924,nmeah.rcvd_msg.pose.position.x);
+  ASSERT_FLOAT_EQ(-15489467.5247,nmeah.rcvd_msg.pose.position.y);
 }
 
 int main(int argc, char **argv)
