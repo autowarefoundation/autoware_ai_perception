@@ -46,6 +46,13 @@ set(incs
         include/ndt_cpu/Octree.h
         )
 
+message(WARNING
+"Adding 'EIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT' macro to prevent ndt_matching's runtime error in debug mode.
+  The bug reasons and solutions are written in http://eigen.tuxfamily.org/dox-devel/group__TopicUnalignedArrayAssert.html .
+  This workaround was discussed on https://gitlab.com/autowarefoundation/autoware.ai/core_perception/merge_requests/57 .")
+
+add_definitions(-DEIGEN_DISABLE_UNALIGNED_ARRAY_ASSERT)
+
 add_library(ndt_cpu ${incs} ${srcs})
 
 target_link_libraries(ndt_cpu
