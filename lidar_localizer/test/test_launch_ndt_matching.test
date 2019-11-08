@@ -1,0 +1,12 @@
+<launch>
+  <param name="tf_x" value="1.2" />
+  <param name="tf_y" value="0.0" />
+  <param name="tf_z" value="2.0" />
+  <param name="tf_yaw" value="0.0" />
+  <param name="tf_pitch" value="0.0" />
+  <param name="tf_roll" value="0.0" />
+  <param name="localizer" value="velodyne" />
+
+  <node pkg="lidar_localizer" type="ndt_matching" name="ndt_matching" />
+  <test pkg="lidar_localizer" type="test_launch_ndt_matching" test-name="test_launch_ndt_matching" />
+</launch>

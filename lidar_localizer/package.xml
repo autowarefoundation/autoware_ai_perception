@@ -28,4 +28,6 @@
   <depend>std_msgs</depend>
   <depend>tf</depend>
   <depend>velodyne_pointcloud</depend>
+
+  <test_depend>rostest</test_depend>
 </package>
