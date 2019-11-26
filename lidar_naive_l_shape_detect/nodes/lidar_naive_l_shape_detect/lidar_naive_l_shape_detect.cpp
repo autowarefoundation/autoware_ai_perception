@@ -271,7 +271,7 @@ void LShapeFilter::getLShapeBB(const autoware_msgs::DetectedObjectArray& in_obje
       for (int i = 0; i < random_points_; i++)
       {
         int p_ind = rand_points(mt);
-        assert(p_ind >= 0 && p_ind < (cloud.size() - 1));
+        assert(p_ind >= 0 && p_ind < cloud.size());
         cv::Point2f p_i(cloud[p_ind].x, cloud[p_ind].y);
 
         // from equation of distance between line and point
