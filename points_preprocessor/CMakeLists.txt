@@ -123,6 +123,8 @@ target_link_libraries(ray_ground_filter_lib
         ${Qt5Core_LIBRARIES}
         )
 
+add_dependencies(ray_ground_filter_lib ${catkin_EXPORTED_TARGETS})
+
 add_executable(ray_ground_filter
         nodes/ray_ground_filter/ray_ground_filter_main.cpp
         )
