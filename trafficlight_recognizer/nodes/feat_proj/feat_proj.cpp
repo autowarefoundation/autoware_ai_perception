@@ -46,6 +46,8 @@ static constexpr uint32_t SUBSCRIBE_QUEUE_SIZE = 1000;
 
 static int adjust_proj_x = 0;
 static int adjust_proj_y = 0;
+static double near_plane_ = 0.0;
+static double far_plane_ = 0.0;
 
 typedef struct
 {
@@ -220,15 +222,13 @@ Point3 transform(const Point3& psrc, const tf::StampedTransform& tfsource)
  */
 bool project2(const Point3& pt, int* u, int* v, bool useOpenGLCoord = false)
 {
-  float nearPlane = 1.0;
-  float farPlane = 200.0;
   Point3 _pt = transform(pt, trf);
   float _u = _pt.x() * fx / _pt.z() + cx;
   float _v = _pt.y() * fy / _pt.z() + cy;
 
   *u = static_cast<int>(_u);
   *v = static_cast<int>(_v);
-  if (*u < 0 || imageWidth < *u || *v < 0 || imageHeight < *v || _pt.z() < nearPlane || farPlane < _pt.z())
+  if (*u < 0 || imageWidth < *u || *v < 0 || imageHeight < *v || _pt.z() < near_plane_ || far_plane_ < _pt.z())
   {
     *u = -1, *v = -1;
     return false;
@@ -369,6 +369,8 @@ int main(int argc, char* argv[])
   ros::NodeHandle private_nh("~");
   std::string cameraInfo_topic_name;
   private_nh.param<std::string>("camera_info_topic", cameraInfo_topic_name, "/camera_info");
+  private_nh.param<double>("roi_search_min_distance", near_plane_, 1.0);
+  private_nh.param<double>("roi_search_max_distance", far_plane_, 200.0);
 
   /* get camera ID */
   camera_id_str = cameraInfo_topic_name;
