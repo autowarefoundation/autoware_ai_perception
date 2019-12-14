@@ -139,7 +139,7 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
          PATTERN ".svn" EXCLUDE
          )
 
-  if (CATKIN_ENABLE_TESTING)
+  if (CATKIN_ENABLE_TESTING AND EXISTS /proc/driver/nvidia/)
     find_package(rostest REQUIRED)
     catkin_add_gtest(test-point_pillars test/src/test_point_pillars.cpp)
     target_link_libraries(test-point_pillars ${catkin_LIBRARIES} point_pillars_lib)
