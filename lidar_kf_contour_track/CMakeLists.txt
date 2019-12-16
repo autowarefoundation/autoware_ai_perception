@@ -9,9 +9,11 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   tf
   jsk_recognition_msgs
+  op_planner
   op_ros_helpers
   cv_bridge
   autoware_msgs
+  pcl_conversions
   )
 
 find_package(OpenCV REQUIRED)
