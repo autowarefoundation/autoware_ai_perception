@@ -3,11 +3,11 @@ project(gnss_localizer)
 
 find_package(autoware_build_flags REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
   geometry_msgs
-  std_msgs
-  nmea_msgs
   gnss
+  nmea_msgs
+  roscpp
+  std_msgs
   tf
 )
 
@@ -34,6 +34,17 @@ target_include_directories(nmea2tfpose PRIVATE nodes/nmea2tfpose ${catkin_INCLUD
 target_link_libraries(nmea2tfpose ${catkin_LIBRARIES})
 add_dependencies(nmea2tfpose ${catkin_EXPORTED_TARGETS})
 
+install(TARGETS nmea2tfpose fix2tfpose
+  ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY launch/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)
+
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   find_package(rosunit REQUIRED)
@@ -42,12 +53,3 @@ if(CATKIN_ENABLE_TESTING)
   target_link_libraries(nmea_test ${catkin_LIBRARIES})
   add_dependencies(nmea_test ${catkin_EXPORTED_TARGETS})
 endif()
-
-install(TARGETS nmea2tfpose fix2tfpose
-        ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-        RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
-
-install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        PATTERN ".svn" EXCLUDE)

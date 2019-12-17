@@ -66,12 +66,12 @@ int probe_mac_addr(char *mac_addr)
     int ret = ioctl(sock, SIOCGIFHWADDR, &ifr);
     if(ret == 0) {
       snprintf(mac_addr, MAC_ADDRBUFSIZ, "%.2x%.2x%.2x%.2x%.2x%.2x",
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[0],
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[1],
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[2],
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[3],
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[4],
-	       (unsigned char)ifr.ifr_hwaddr.sa_data[5]);
+         (unsigned char)ifr.ifr_hwaddr.sa_data[0],
+         (unsigned char)ifr.ifr_hwaddr.sa_data[1],
+         (unsigned char)ifr.ifr_hwaddr.sa_data[2],
+         (unsigned char)ifr.ifr_hwaddr.sa_data[3],
+         (unsigned char)ifr.ifr_hwaddr.sa_data[4],
+         (unsigned char)ifr.ifr_hwaddr.sa_data[5]);
       close(sock);
       fprintf(stderr, "use %s MAC address info\n", devname[i]);
       return 0;

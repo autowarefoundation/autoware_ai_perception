@@ -122,7 +122,7 @@ class ROSSSDApp
 
   void config_cb(const autoware_config_msgs::ConfigSSD::ConstPtr& param)
   {
-    score_threshold_ 	= param->score_threshold;
+    score_threshold_   = param->score_threshold;
   }
 
 public:
@@ -217,11 +217,11 @@ public:
 
   ROSSSDApp()
   {
-    ssd_detector_ 	= NULL;
+    ssd_detector_   = NULL;
     score_threshold_= 0.5;
-    use_gpu_ 		= false;
-    gpu_device_id_ 	= 0;
-    pixel_mean_		= cv::Scalar(102.9801, 115.9465, 122.7717);
+    use_gpu_     = false;
+    gpu_device_id_   = 0;
+    pixel_mean_    = cv::Scalar(102.9801, 115.9465, 122.7717);
   }
 };
 
@@ -231,7 +231,7 @@ int main(int argc, char **argv)
 
   ROSSSDApp app;
 
-	app.Run();
+  app.Run();
 
   return 0;
 }

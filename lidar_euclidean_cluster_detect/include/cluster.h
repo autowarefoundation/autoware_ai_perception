@@ -78,14 +78,14 @@ class Cluster
 
 public:
   /* \brief Constructor. Creates a Cluster object using the specified points in a PointCloud
-   * \param[in] in_origin_cloud_ptr 	Origin PointCloud
-   * \param[in] in_cluster_indices 	Indices of the Origin Pointcloud to create the Cluster
-   * \param[in] in_id 				ID of the cluster
-   * \param[in] in_r 					Amount of Red [0-255]
-   * \param[in] in_g 					Amount of Green [0-255]
-   * \param[in] in_b 					Amount of Blue [0-255]
-   * \param[in] in_label 				Label to identify this cluster (optional)
-   * \param[in] in_estimate_pose		Flag to enable Pose Estimation of the Bounding Box
+   * \param[in] in_origin_cloud_ptr   Origin PointCloud
+   * \param[in] in_cluster_indices   Indices of the Origin Pointcloud to create the Cluster
+   * \param[in] in_id         ID of the cluster
+   * \param[in] in_r           Amount of Red [0-255]
+   * \param[in] in_g           Amount of Green [0-255]
+   * \param[in] in_b           Amount of Blue [0-255]
+   * \param[in] in_label         Label to identify this cluster (optional)
+   * \param[in] in_estimate_pose    Flag to enable Pose Estimation of the Bounding Box
    * */
   void SetCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr in_origin_cloud_ptr,
                 const std::vector<int>& in_cluster_indices, std_msgs::Header in_ros_header, int in_id, int in_r,
@@ -135,7 +135,7 @@ public:
 
   /* \brief Returns a pointer to a PointCloud object containing the merged points between current Cluster and the
    * specified PointCloud
-   * \param[in] in_cloud_ptr 	Origin PointCloud
+   * \param[in] in_cloud_ptr   Origin PointCloud
    * */
   pcl::PointCloud<pcl::PointXYZ>::Ptr JoinCloud(const pcl::PointCloud<pcl::PointXYZ>::Ptr in_cloud_ptr);
 

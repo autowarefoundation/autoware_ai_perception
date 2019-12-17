@@ -2930,7 +2930,7 @@ namespace ClipperLib
         {
 #ifdef use_xyz
                                                                                                                                   if (dir == dLeftToRight) SetZ(e->Curr, *horzEdge, *e);
-			else SetZ(e->Curr, *e, *horzEdge);
+      else SetZ(e->Curr, *e, *horzEdge);
 #endif
           op1 = AddOutPt(horzEdge, e->Curr);
           TEdge *eNextHorz = m_SortedEdges;

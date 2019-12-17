@@ -439,7 +439,7 @@ std::vector<ClusterPtr> clusterAndColor(const pcl::PointCloud<pcl::PointXYZ>::Pt
   // use indices on 3d cloud
 
   /////////////////////////////////
-  //---	3. Color clustered points
+  //---  3. Color clustered points
   /////////////////////////////////
   unsigned int k = 0;
   // pcl::PointCloud<pcl::PointXYZRGB>::Ptr final_cluster (new pcl::PointCloud<pcl::PointXYZRGB>);

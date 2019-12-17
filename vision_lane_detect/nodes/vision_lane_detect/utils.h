@@ -19,25 +19,25 @@
 class ExpMovingAverage {
 private:
         double alpha; // [0;1] less = more stable, more = less stable
-	double oldValue;
+  double oldValue;
         bool unset;
 public:
-	ExpMovingAverage()
-	    : alpha(0.2), unset(true) {
-	}
+  ExpMovingAverage()
+      : alpha(0.2), unset(true) {
+  }
 
         void clear() {
                 unset = true;
         }
 
-	void add(double value) {
-		if (unset) {
-			oldValue = value;
+  void add(double value) {
+    if (unset) {
+      oldValue = value;
                         unset = false;
-		}
-		double newValue = oldValue + alpha * (value - oldValue);
-		oldValue = newValue;
-	}
+    }
+    double newValue = oldValue + alpha * (value - oldValue);
+    oldValue = newValue;
+  }
 
         double get() {
                 return oldValue;
@@ -46,36 +46,36 @@ public:
 
 static inline CvPoint2D32f sub(CvPoint2D32f b, CvPoint2D32f a)
 {
-	return cvPoint2D32f(b.x-a.x, b.y-a.y);
+  return cvPoint2D32f(b.x-a.x, b.y-a.y);
 }
 
 static inline CvPoint2D32f mul(CvPoint2D32f b, CvPoint2D32f a)
 {
-	return cvPoint2D32f(b.x*a.x, b.y*a.y);
+  return cvPoint2D32f(b.x*a.x, b.y*a.y);
 }
 
 static inline CvPoint2D32f add(CvPoint2D32f b, CvPoint2D32f a)
 {
-	return cvPoint2D32f(b.x+a.x, b.y+a.y);
+  return cvPoint2D32f(b.x+a.x, b.y+a.y);
 }
 
 static inline CvPoint2D32f mul(CvPoint2D32f b, float t)
 {
-	return cvPoint2D32f(b.x*t, b.y*t);
+  return cvPoint2D32f(b.x*t, b.y*t);
 }
 
 static inline float dot(CvPoint2D32f a, CvPoint2D32f b)
 {
-	return (b.x*a.x + b.y*a.y);
+  return (b.x*a.x + b.y*a.y);
 }
 
 static inline float dist(CvPoint2D32f v)
 {
-	return sqrtf(v.x*v.x + v.y*v.y);
+  return sqrtf(v.x*v.x + v.y*v.y);
 }
 
 static inline CvPoint2D32f point_on_segment(CvPoint2D32f line0, CvPoint2D32f line1,
-					    CvPoint2D32f pt)
+              CvPoint2D32f pt)
 {
         CvPoint2D32f v = sub(pt, line0);
         CvPoint2D32f dir = sub(line1, line0);

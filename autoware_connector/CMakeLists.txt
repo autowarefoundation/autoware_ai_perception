@@ -1,64 +1,63 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(autoware_connector)
 
-
-find_package(autoware_msgs REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-        autoware_build_flags
-        roscpp
-        tf
-        geometry_msgs
-        autoware_msgs
-        autoware_can_msgs
-        nav_msgs
-        std_msgs
-        )
-
-
-catkin_package(
+  autoware_build_flags
+  autoware_can_msgs
+  autoware_msgs
+  geometry_msgs
+  nav_msgs
+  roscpp
+  std_msgs
+  tf
 )
 
+catkin_package()
+
 include_directories(
-        ${catkin_INCLUDE_DIRS}
-        include
+  include
+  ${catkin_INCLUDE_DIRS}
 )
 
 add_executable(can_status_translator
-        nodes/can_status_translator/can_status_translator_node.cpp
-        nodes/can_status_translator/can_status_translator_core.cpp
-        )
+  nodes/can_status_translator/can_status_translator_node.cpp
+  nodes/can_status_translator/can_status_translator_core.cpp
+)
 
 target_link_libraries(can_status_translator
-        ${catkin_LIBRARIES}
-        )
+  ${catkin_LIBRARIES}
+)
 
 add_dependencies(can_status_translator
-        ${catkin_EXPORTED_TARGETS}
-        )
+  ${catkin_EXPORTED_TARGETS}
+)
 
 add_executable(can_odometry
-        nodes/can_odometry/can_odometry_node.cpp
-        nodes/can_odometry/can_odometry_core.cpp
-        )
+  nodes/can_odometry/can_odometry_node.cpp
+  nodes/can_odometry/can_odometry_core.cpp
+)
 
 target_link_libraries(can_odometry
-        ${catkin_LIBRARIES}
-        )
+  ${catkin_LIBRARIES}
+)
 
 add_dependencies(can_odometry
-        ${catkin_EXPORTED_TARGETS}
-        )
+  ${catkin_EXPORTED_TARGETS}
+)
 
 install(TARGETS can_status_translator
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(TARGETS can_odometry
   ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
   LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION})
+  RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
 install(DIRECTORY launch/
-        DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
-        PATTERN ".svn" EXCLUDE)
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
+  PATTERN ".svn" EXCLUDE
+)

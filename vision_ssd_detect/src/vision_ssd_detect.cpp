@@ -17,9 +17,9 @@
 
 
 SSDDetector::SSDDetector(const std::string& in_network_definition_file,
-		const std::string& in_pre_trained_model_file,
-		const cv::Scalar& in_mean_value,
-		bool in_use_gpu, unsigned int in_gpu_id)
+    const std::string& in_pre_trained_model_file,
+    const cv::Scalar& in_mean_value,
+    bool in_use_gpu, unsigned int in_gpu_id)
 {
   if (in_use_gpu)
   {
@@ -116,7 +116,7 @@ void SSDDetector::WrapInputLayer(std::vector<cv::Mat>* input_channels)
 }
 
 void SSDDetector::Preprocess(const cv::Mat& img,
-		std::vector<cv::Mat>* input_channels)
+    std::vector<cv::Mat>* input_channels)
 {
   /* Convert the input image to the input image format of the network. */
   cv::Mat sample;

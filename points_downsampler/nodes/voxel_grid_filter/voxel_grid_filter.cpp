@@ -108,20 +108,20 @@ static void scan_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
   points_downsampler_info_pub.publish(points_downsampler_info_msg);
 
   if(_output_log == true){
-	  if(!ofs){
-		  std::cerr << "Could not open " << filename << "." << std::endl;
-		  exit(1);
-	  }
-	  ofs << points_downsampler_info_msg.header.seq << ","
-		  << points_downsampler_info_msg.header.stamp << ","
-		  << points_downsampler_info_msg.header.frame_id << ","
-		  << points_downsampler_info_msg.filter_name << ","
-		  << points_downsampler_info_msg.original_points_size << ","
-		  << points_downsampler_info_msg.filtered_points_size << ","
-		  << points_downsampler_info_msg.original_ring_size << ","
-		  << points_downsampler_info_msg.filtered_ring_size << ","
-		  << points_downsampler_info_msg.exe_time << ","
-		  << std::endl;
+    if(!ofs){
+      std::cerr << "Could not open " << filename << "." << std::endl;
+      exit(1);
+    }
+    ofs << points_downsampler_info_msg.header.seq << ","
+      << points_downsampler_info_msg.header.stamp << ","
+      << points_downsampler_info_msg.header.frame_id << ","
+      << points_downsampler_info_msg.filter_name << ","
+      << points_downsampler_info_msg.original_points_size << ","
+      << points_downsampler_info_msg.filtered_points_size << ","
+      << points_downsampler_info_msg.original_ring_size << ","
+      << points_downsampler_info_msg.filtered_ring_size << ","
+      << points_downsampler_info_msg.exe_time << ","
+      << std::endl;
   }
 
 }
@@ -136,12 +136,12 @@ int main(int argc, char** argv)
   private_nh.getParam("points_topic", POINTS_TOPIC);
   private_nh.getParam("output_log", _output_log);
   if(_output_log == true){
-	  char buffer[80];
-	  std::time_t now = std::time(NULL);
-	  std::tm *pnow = std::localtime(&now);
-	  std::strftime(buffer,80,"%Y%m%d_%H%M%S",pnow);
-	  filename = "voxel_grid_filter_" + std::string(buffer) + ".csv";
-	  ofs.open(filename.c_str(), std::ios::app);
+    char buffer[80];
+    std::time_t now = std::time(NULL);
+    std::tm *pnow = std::localtime(&now);
+    std::strftime(buffer,80,"%Y%m%d_%H%M%S",pnow);
+    filename = "voxel_grid_filter_" + std::string(buffer) + ".csv";
+    ofs.open(filename.c_str(), std::ios::app);
   }
   private_nh.param<double>("measurement_range", measurement_range, MAX_MEASUREMENT_RANGE);
 

@@ -310,7 +310,7 @@ struct layer{
 
     struct layer *input_h_layer;
     struct layer *state_h_layer;
-	
+  
     struct layer *wz;
     struct layer *uz;
     struct layer *wr;

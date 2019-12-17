@@ -287,7 +287,7 @@ int eigenvalue_matrix2d(double mat[2][2], double *l1, double *l2)
   b = -mat[0][0] - mat[1][1];
   c = mat[0][0] * mat[1][1] - mat[1][0] * mat[0][1];
 
-  //	if(fabs(a) < E_ERROR)return(0);
+  //  if(fabs(a) < E_ERROR)return(0);
 
   x = sqrt(b * b - 4 * a * c);
   *l1 = (-b + x) / 2 * a;
@@ -335,7 +335,7 @@ int eigenvalue_matrix3d(double mat[3][3], double l1[2], double l2[2], double l3[
       mat[1][1] * mat[0][2] * mat[0][2] + mat[2][2] * mat[0][1] * mat[0][1];
   kai_3(a, b, c, l1, l2, l3);
 
-  //	if(fabs(a) < E_ERROR)return(0);
+  //  if(fabs(a) < E_ERROR)return(0);
   return 0;
 }
 /*****************************************************************/
