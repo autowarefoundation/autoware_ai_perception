@@ -566,7 +566,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
     std::cout << "Sequence: " << input->header.seq << std::endl;
     std::cout << "Timestamp: " << input->header.stamp << std::endl;
     std::cout << "Frame ID: " << input->header.frame_id << std::endl;
-    //		std::cout << "Number of Scan Points: " << scan_ptr->size() << " points." << std::endl;
+    //    std::cout << "Number of Scan Points: " << scan_ptr->size() << " points." << std::endl;
     std::cout << "Number of Filtered Scan Points: " << scan_points_num << " points." << std::endl;
     std::cout << "ICP has converged: " << icp.hasConverged() << std::endl;
     std::cout << "Fitness Score: " << fitness_score << std::endl;

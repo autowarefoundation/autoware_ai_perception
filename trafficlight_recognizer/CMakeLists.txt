@@ -3,39 +3,36 @@ project(trafficlight_recognizer)
 
 find_package(autoware_build_flags REQUIRED)
 
-find_package(autoware_msgs REQUIRED)
-
-find_package(vector_map REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
-        cmake_modules
-        cv_bridge
-        geometry_msgs
-        libvectormap
-        roscpp
-        roslint
-        sensor_msgs
-        std_msgs
-        tf
-        vector_map_server
-        visualization_msgs
-        autoware_msgs
-        vector_map
-        lanelet2_extension
-        )
+  autoware_msgs
+  cmake_modules
+  cv_bridge
+  geometry_msgs
+  lanelet2_extension
+  libvectormap
+  roscpp
+  roslint
+  sensor_msgs
+  std_msgs
+  tf
+  vector_map
+  vector_map_server
+  visualization_msgs
+)
 
 find_package(OpenCV REQUIRED)
 find_package(Eigen3 QUIET)
 
-if (NOT EIGEN3_FOUND)
-    # Fallback to cmake_modules
-    find_package(cmake_modules REQUIRED)
-    find_package(Eigen REQUIRED)
-    set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
-    set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
-    # Possibly map additional variables to the EIGEN3_ prefix.
-else ()
-    set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
-endif ()
+if(NOT EIGEN3_FOUND)
+  # Fallback to cmake_modules
+  find_package(cmake_modules REQUIRED)
+  find_package(Eigen REQUIRED)
+  set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
+  set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
+  # Possibly map additional variables to the EIGEN3_ prefix.
+else()
+  set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+endif()
 
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTOUIC ON)
@@ -47,9 +44,6 @@ find_package(Qt5Widgets REQUIRED)
 
 find_package(OpenGL REQUIRED)
 
-###################################
-## catkin specific configuration ##
-###################################
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
@@ -58,33 +52,14 @@ include_directories(
 
 catkin_package(
   INCLUDE_DIRS ${EIGEN3_INCLUDE_DIRS}
-  CATKIN_DEPENDS
-  autoware_msgs
-  cmake_modules
-  cv_bridge
-  geometry_msgs
-  libvectormap
-  roscpp
-  sensor_msgs
-  std_msgs
-  tf
-  vector_map
-  vector_map_server
-  visualization_msgs
-
   LIBRARIES libcontext
 )
-
-
 
 set(CMAKE_CXX_FLAGS "-O2 -Wall -Wunused-variable ${CMAKE_CXX_FLAGS}")
 
 set(ROSLINT_CPP_OPTS "--filter=-build/c++11")
 roslint_cpp()
 
-###########
-## Build ##
-###########
 add_library(libcontext lib/context.cpp)
 
 add_dependencies(
@@ -145,20 +120,22 @@ add_dependencies(
   ${catkin_EXPORTED_TARGETS}
 )
 
-add_executable(feat_proj_lanelet2
-        nodes/feat_proj_lanelet2/feat_proj_lanelet2_core.cpp
-        nodes/feat_proj_lanelet2/feat_proj_lanelet2_node.cpp
-        )
+add_executable(
+  feat_proj_lanelet2
+  nodes/feat_proj_lanelet2/feat_proj_lanelet2_core.cpp
+  nodes/feat_proj_lanelet2/feat_proj_lanelet2_node.cpp
+)
 
-target_link_libraries(feat_proj_lanelet2
-        ${catkin_LIBRARIES}
-        ${OpenCV_LIBS}
-        )
+target_link_libraries(
+  feat_proj_lanelet2
+  ${catkin_LIBRARIES}
+  ${OpenCV_LIBS}
+)
 
-add_dependencies(feat_proj_lanelet2
-        ${catkin_EXPORTED_TARGETS}
-        )
-
+add_dependencies(
+  feat_proj_lanelet2
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ### tlr_tuner ###
 EXECUTE_PROCESS(
@@ -273,13 +250,13 @@ install(
 
 AW_CHECK_CUDA()
 
-if (USE_CUDA)
+if(USE_CUDA)
   ### region_tlr_ssd ###
   ##############################SSD'sFORK of CAFFE NEEDS TO BE PREVIOUSLY COMPILED####################
   set(SSD_CAFFE_PATH "$ENV{HOME}/ssdcaffe/distribute")
   ####################################################################################################
 
-  if (EXISTS "${SSD_CAFFE_PATH}")
+  if(EXISTS "${SSD_CAFFE_PATH}")
 
     find_package(CUDA REQUIRED)
 
@@ -318,10 +295,9 @@ if (USE_CUDA)
       LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
       RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-
-  else ()                          # if(EXISTS "${SSD_CAFFE_PATH}")
+  else()                          # if(EXISTS "${SSD_CAFFE_PATH}")
     message("'SSD/Caffe' is not installed. 'region_tlr_ssd' will not be built.")
-  endif ()                         # if(EXISTS "${SSD_CAFFE_PATH}")
+  endif()                         # if(EXISTS "${SSD_CAFFE_PATH}")
 
   ### region_tlr_mxnet ###
   ##############################MXNET with CPP_PACKAGE NEEDS TO BE PREVIOUSLY COMPILED################
@@ -329,7 +305,7 @@ if (USE_CUDA)
   set(MXNET_PATH "$ENV{HOME}/mxnet/")
   ####################################################################################################
 
-  if (EXISTS "${MXNET_PATH}")
+  if(EXISTS "${MXNET_PATH}")
     find_package(CUDA REQUIRED)
 
     add_executable(
@@ -369,22 +345,22 @@ if (USE_CUDA)
       LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
       RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
     )
-  else ()
+  else()
     message("'MXNET Package' is not installed. 'region_tlr_mxnet' will not be built.")
-  endif ()
-endif ()
+  endif()
+endif()
 
-if (CATKIN_ENABLE_TESTING)
+if(CATKIN_ENABLE_TESTING)
   roslint_add_test()
   find_package(rostest REQUIRED)
   add_rostest_gtest(test-feat_proj_lanelet2
     test/test_feat_proj_lanelet2.test
     test/src/test_feat_proj_lanelet2.cpp
     nodes/feat_proj_lanelet2/feat_proj_lanelet2_core.cpp
-    )
+  )
   add_dependencies(test-feat_proj_lanelet2 ${catkin_EXPORTED_TARGETS})
   target_link_libraries(test-feat_proj_lanelet2
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
-    )
-endif ()
+  )
+endif()

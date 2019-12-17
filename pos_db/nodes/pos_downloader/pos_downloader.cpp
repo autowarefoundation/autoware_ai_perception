@@ -42,18 +42,18 @@ publish data as ractangular plane
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 
-#define MYNAME		"pos_downloader"
+#define MYNAME    "pos_downloader"
 #define PICTOGRAMNAME "mo_pictograms"
-#define STARTTIME	(0)		// sec since 1970-01-01 (0==now)
-#define DELAYSEC	(0)		// delay sec for pos_uploader
-#define POSUP_DZ	(40)		// z offset of PosUp
-#define PEDESTRIAN_DZ	(-2)		// z offset of pedestrian_pose
-#define DOWNLOAD_PERIOD	(250)		// period (msec)
-#define TOTAL_LIFETIME	(10.0)		// total lifetime (sec)
+#define STARTTIME  (0)    // sec since 1970-01-01 (0==now)
+#define DELAYSEC  (0)    // delay sec for pos_uploader
+#define POSUP_DZ  (40)    // z offset of PosUp
+#define PEDESTRIAN_DZ  (-2)    // z offset of pedestrian_pose
+#define DOWNLOAD_PERIOD  (250)    // period (msec)
+#define TOTAL_LIFETIME  (10.0)    // total lifetime (sec)
 
-#define TYPE_OWN	(1)
-#define TYPE_CAR	(2)
-#define TYPE_PEDESTRIAN	(3)
+#define TYPE_OWN  (1)
+#define TYPE_CAR  (2)
+#define TYPE_PEDESTRIAN  (3)
 
 #define ANON_MARKER_ID_MIN     (2)
 #define ANON_MARKER_ID_MAX     (0x7f000000)
@@ -66,8 +66,8 @@ static string sshpubkey;
 static string sshprivatekey;
 static int ssh_port;
 static string sshtunnelhost;
-static int sleep_msec = DOWNLOAD_PERIOD;	// period
-static double life_time = 1.0;			// sec
+static int sleep_msec = DOWNLOAD_PERIOD;  // period
+static double life_time = 1.0;      // sec
 static double posup_dz;
 static double pedestrian_dz;
 
@@ -400,7 +400,7 @@ static void pictogram_publisher(const std_msgs::String& msg, int is_swap) {
         cols[0].find("current_pose", 0) != string::npos ||
         cols[0].find("ndt_pose", 0) != string::npos) &&
         cols[0].find(mac_addr, 0) != string::npos) {
-          continue;	// don't publish Marker of my pose
+          continue;  // don't publish Marker of my pose
     }
 
     if (is_swap) {
@@ -430,7 +430,7 @@ static void pictogram_publisher(const std_msgs::String& msg, int is_swap) {
         pose.position.x = geo.y();
         pose.position.y = geo.x();
       } else {
-        	pose.position.x = geo.x();
+          pose.position.x = geo.x();
           pose.position.y = geo.y();
       }
       pose.position.z = geo.z();

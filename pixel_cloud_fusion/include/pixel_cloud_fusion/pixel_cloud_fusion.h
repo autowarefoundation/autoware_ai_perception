@@ -58,72 +58,72 @@
 #include <Eigen/Eigen>
 
 namespace std {
-	template <>
-	class hash< cv::Point >{
-	public :
-		size_t operator()(const cv::Point &pixel_cloud ) const
-		{
-			return hash<std::string>()( std::to_string(pixel_cloud.x) + "|" + std::to_string(pixel_cloud.y) );
-		}
-	};
+  template <>
+  class hash< cv::Point >{
+  public :
+    size_t operator()(const cv::Point &pixel_cloud ) const
+    {
+      return hash<std::string>()( std::to_string(pixel_cloud.x) + "|" + std::to_string(pixel_cloud.y) );
+    }
+  };
 };
 
 class ROSPixelCloudFusionApp
 {
-	ros::NodeHandle                     node_handle_;
-	ros::Publisher                      publisher_fused_cloud_;
-	ros::Subscriber                     intrinsics_subscriber_;
+  ros::NodeHandle                     node_handle_;
+  ros::Publisher                      publisher_fused_cloud_;
+  ros::Subscriber                     intrinsics_subscriber_;
 
-	tf::TransformListener*              transform_listener_;
-	tf::StampedTransform                camera_lidar_tf_;
+  tf::TransformListener*              transform_listener_;
+  tf::StampedTransform                camera_lidar_tf_;
 
-	cv::Size                            image_size_;
-	cv::Mat                             camera_instrinsics_;
-	cv::Mat                             distortion_coefficients_;
-	cv::Mat                             current_frame_;
+  cv::Size                            image_size_;
+  cv::Mat                             camera_instrinsics_;
+  cv::Mat                             distortion_coefficients_;
+  cv::Mat                             current_frame_;
 
-	std::string 						image_frame_id_;
+  std::string             image_frame_id_;
 
-	bool                                processing_;
-	bool                                camera_info_ok_;
-	bool                                camera_lidar_tf_ok_;
+  bool                                processing_;
+  bool                                camera_info_ok_;
+  bool                                camera_lidar_tf_ok_;
 
-	float                               fx_, fy_, cx_, cy_;
-	pcl::PointCloud<pcl::PointXYZRGB>   colored_cloud_;
+  float                               fx_, fy_, cx_, cy_;
+  pcl::PointCloud<pcl::PointXYZRGB>   colored_cloud_;
 
-	typedef
-	message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Image> SyncPolicyT;
+  typedef
+  message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::Image> SyncPolicyT;
 
-	ros::Subscriber                     cloud_subscriber_;
-	ros::Subscriber                     image_subscriber_;
-	message_filters::Synchronizer<SyncPolicyT>              *cloud_synchronizer_;
+  ros::Subscriber                     cloud_subscriber_;
+  ros::Subscriber                     image_subscriber_;
+  message_filters::Synchronizer<SyncPolicyT>              *cloud_synchronizer_;
 
-	pcl::PointXYZ TransformPoint(const pcl::PointXYZ &in_point, const tf::StampedTransform &in_transform);
+  pcl::PointXYZ TransformPoint(const pcl::PointXYZ &in_point, const tf::StampedTransform &in_transform);
 
-	void ImageCallback(const sensor_msgs::Image::ConstPtr &in_image_msg);
+  void ImageCallback(const sensor_msgs::Image::ConstPtr &in_image_msg);
 
-	void CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &in_cloud_msg);
+  void CloudCallback(const sensor_msgs::PointCloud2::ConstPtr &in_cloud_msg);
 
-	/*!
-	 * Obtains Transformation between two transforms registered in the TF Tree
-	 * @param in_target_frame
-	 * @param in_source_frame
-	 * @return the found transformation in the tree
-	 */
-	tf::StampedTransform
-	FindTransform(const std::string &in_target_frame, const std::string &in_source_frame);
+  /*!
+   * Obtains Transformation between two transforms registered in the TF Tree
+   * @param in_target_frame
+   * @param in_source_frame
+   * @return the found transformation in the tree
+   */
+  tf::StampedTransform
+  FindTransform(const std::string &in_target_frame, const std::string &in_source_frame);
 
-	void IntrinsicsCallback(const sensor_msgs::CameraInfo& in_message);
+  void IntrinsicsCallback(const sensor_msgs::CameraInfo& in_message);
 
-	/*!
-	 * Reads the config params from the command line
-	 * @param in_private_handle
-	 */
-	void InitializeROSIo(ros::NodeHandle &in_private_handle);
+  /*!
+   * Reads the config params from the command line
+   * @param in_private_handle
+   */
+  void InitializeROSIo(ros::NodeHandle &in_private_handle);
 
 public:
-	void Run();
-	ROSPixelCloudFusionApp();
+  void Run();
+  ROSPixelCloudFusionApp();
 };
 
 #endif //PROJECT_PIXEL_CLOUD_FUSION_H

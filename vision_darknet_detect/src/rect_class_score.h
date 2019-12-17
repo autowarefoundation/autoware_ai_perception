@@ -22,21 +22,21 @@ namespace Yolo3
 template<typename _Tp> class RectClassScore
 {
 public:
-	_Tp x, y, w, h;
-	_Tp score;
-	unsigned int class_type;
-	bool enabled;
+  _Tp x, y, w, h;
+  _Tp score;
+  unsigned int class_type;
+  bool enabled;
 
-	inline std::string toString()
-	{
-		std::ostringstream out;
-		out << class_type << "(x:" << x << ", y:" << y << ", w:" << w << ", h:" << h << ") =" << score;
-		return out.str();
-	}
-	inline std::string GetClassString()
-	{
-		switch (class_type)
-		{
+  inline std::string toString()
+  {
+    std::ostringstream out;
+    out << class_type << "(x:" << x << ", y:" << y << ", w:" << w << ", h:" << h << ") =" << score;
+    return out.str();
+  }
+  inline std::string GetClassString()
+  {
+    switch (class_type)
+    {
             case Yolo3::PERSON: return "person";
             case Yolo3::BICYCLE: return "bicycle";
             case Yolo3::CAR: return "car";
@@ -117,10 +117,10 @@ public:
             case Yolo3::TEDDY_BEAR: return "teddy_bear";
             case Yolo3::HAIR_DRIER: return "hair_drier";
             case Yolo3::TOOTHBRUSH: return "toothbrush";
-			default:return "error";
-		}
-	}
-	inline int GetClassInt()
+      default:return "error";
+    }
+  }
+  inline int GetClassInt()
     {
         switch (class_type)
         {
@@ -206,7 +206,7 @@ public:
             case Yolo3::TOOTHBRUSH: return 13;
             default:return 0;
         }
-	}
+  }
 };
 
 #endif /* RECTCLASSSCORE_H_ */

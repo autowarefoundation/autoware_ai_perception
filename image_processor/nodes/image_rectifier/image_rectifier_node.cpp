@@ -33,115 +33,115 @@
 class ROSImageRectifierApp
 
 {
-	ros::Subscriber     subscriber_image_raw_;
-	ros::Subscriber     subscriber_intrinsics_;
+  ros::Subscriber     subscriber_image_raw_;
+  ros::Subscriber     subscriber_intrinsics_;
 
-	ros::Publisher      publisher_image_rectified_;
+  ros::Publisher      publisher_image_rectified_;
 
-	cv::Size            image_size_;
-	cv::Mat             camera_instrinsics_;
-	cv::Mat             distortion_coefficients_;
+  cv::Size            image_size_;
+  cv::Mat             camera_instrinsics_;
+  cv::Mat             distortion_coefficients_;
 
 
-	void ImageCallback(const sensor_msgs::Image& in_image_sensor)
-	{
-		//Receive Image, convert it to OpenCV Mat
-		cv_bridge::CvImagePtr cv_image = cv_bridge::toCvCopy(in_image_sensor, "bgr8");
-		cv::Mat tmp_image = cv_image->image;
-		cv::Mat image;
-		if (camera_instrinsics_.empty())
-		{
-			ROS_INFO("[%s] Make sure camera_info is being published in the specified topic", _NODE_NAME_);
-			image = tmp_image;
-		}
-		else
-		{
-			cv::undistort(tmp_image, image, camera_instrinsics_, distortion_coefficients_);
-		}
+  void ImageCallback(const sensor_msgs::Image& in_image_sensor)
+  {
+    //Receive Image, convert it to OpenCV Mat
+    cv_bridge::CvImagePtr cv_image = cv_bridge::toCvCopy(in_image_sensor, "bgr8");
+    cv::Mat tmp_image = cv_image->image;
+    cv::Mat image;
+    if (camera_instrinsics_.empty())
+    {
+      ROS_INFO("[%s] Make sure camera_info is being published in the specified topic", _NODE_NAME_);
+      image = tmp_image;
+    }
+    else
+    {
+      cv::undistort(tmp_image, image, camera_instrinsics_, distortion_coefficients_);
+    }
 
-		cv_bridge::CvImage out_msg;
-		out_msg.header   = in_image_sensor.header; // Same timestamp and tf frame as input image
-		out_msg.encoding = sensor_msgs::image_encodings::BGR8;
-		out_msg.image    = image; // Your cv::Mat
+    cv_bridge::CvImage out_msg;
+    out_msg.header   = in_image_sensor.header; // Same timestamp and tf frame as input image
+    out_msg.encoding = sensor_msgs::image_encodings::BGR8;
+    out_msg.image    = image; // Your cv::Mat
 
-		publisher_image_rectified_.publish(out_msg.toImageMsg());
+    publisher_image_rectified_.publish(out_msg.toImageMsg());
 
-	}
+  }
 
-	void IntrinsicsCallback(const sensor_msgs::CameraInfo& in_message)
-	{
-		image_size_.height = in_message.height;
-		image_size_.width = in_message.width;
+  void IntrinsicsCallback(const sensor_msgs::CameraInfo& in_message)
+  {
+    image_size_.height = in_message.height;
+    image_size_.width = in_message.width;
 
-		camera_instrinsics_ = cv::Mat(3,3, CV_64F);
-		for (int row=0; row<3; row++) {
-			for (int col=0; col<3; col++) {
-				camera_instrinsics_.at<double>(row, col) = in_message.K[row * 3 + col];
-			}
-		}
+    camera_instrinsics_ = cv::Mat(3,3, CV_64F);
+    for (int row=0; row<3; row++) {
+      for (int col=0; col<3; col++) {
+        camera_instrinsics_.at<double>(row, col) = in_message.K[row * 3 + col];
+      }
+    }
 
-		distortion_coefficients_ = cv::Mat(1,5,CV_64F);
-		for (int col=0; col<5; col++) {
-			distortion_coefficients_.at<double>(col) = in_message.D[col];
-		}
-	}
+    distortion_coefficients_ = cv::Mat(1,5,CV_64F);
+    for (int col=0; col<5; col++) {
+      distortion_coefficients_.at<double>(col) = in_message.D[col];
+    }
+  }
 
 public:
-	void Run()
-	{
-		ros::NodeHandle node_handle("~");//to receive args
+  void Run()
+  {
+    ros::NodeHandle node_handle("~");//to receive args
 
-		std::string image_raw_topic_str, camera_info_topic_str, image_rectified_str = "/image_rectified";
-		std::string name_space_str = ros::this_node::getNamespace();
+    std::string image_raw_topic_str, camera_info_topic_str, image_rectified_str = "/image_rectified";
+    std::string name_space_str = ros::this_node::getNamespace();
 
-		node_handle.param<std::string>("image_src", image_raw_topic_str, "/image_raw");
+    node_handle.param<std::string>("image_src", image_raw_topic_str, "/image_raw");
 
-		node_handle.param<std::string>("camera_info_src", camera_info_topic_str, "/camera_info");
+    node_handle.param<std::string>("camera_info_src", camera_info_topic_str, "/camera_info");
 
-		if (name_space_str != "/") {
-			if (name_space_str.substr(0, 2) == "//") {
-				/* if name space obtained by ros::this::node::getNamespace()
-				   starts with "//", delete one of them */
-				name_space_str.erase(name_space_str.begin());
-			}
-			image_raw_topic_str = name_space_str + image_raw_topic_str;
-			image_rectified_str = name_space_str + image_rectified_str;
-			camera_info_topic_str = name_space_str + camera_info_topic_str;
-		}
+    if (name_space_str != "/") {
+      if (name_space_str.substr(0, 2) == "//") {
+        /* if name space obtained by ros::this::node::getNamespace()
+           starts with "//", delete one of them */
+        name_space_str.erase(name_space_str.begin());
+      }
+      image_raw_topic_str = name_space_str + image_raw_topic_str;
+      image_rectified_str = name_space_str + image_rectified_str;
+      camera_info_topic_str = name_space_str + camera_info_topic_str;
+    }
 
-		ROS_INFO("[%s] image_src: %s", _NODE_NAME_, image_raw_topic_str.c_str());
-		ROS_INFO("[%s] camera_info_src: %s", _NODE_NAME_, camera_info_topic_str.c_str());
+    ROS_INFO("[%s] image_src: %s", _NODE_NAME_, image_raw_topic_str.c_str());
+    ROS_INFO("[%s] camera_info_src: %s", _NODE_NAME_, camera_info_topic_str.c_str());
 
-		ROS_INFO("[%s] Subscribing to... %s", _NODE_NAME_, image_raw_topic_str.c_str());
-		subscriber_image_raw_ = node_handle.subscribe(image_raw_topic_str, 1, &ROSImageRectifierApp::ImageCallback, this);
+    ROS_INFO("[%s] Subscribing to... %s", _NODE_NAME_, image_raw_topic_str.c_str());
+    subscriber_image_raw_ = node_handle.subscribe(image_raw_topic_str, 1, &ROSImageRectifierApp::ImageCallback, this);
 
-		ROS_INFO("[%s] Subscribing to... %s", _NODE_NAME_, camera_info_topic_str.c_str());
-		subscriber_intrinsics_ = node_handle.subscribe(camera_info_topic_str, 1, &ROSImageRectifierApp::IntrinsicsCallback, this);
+    ROS_INFO("[%s] Subscribing to... %s", _NODE_NAME_, camera_info_topic_str.c_str());
+    subscriber_intrinsics_ = node_handle.subscribe(camera_info_topic_str, 1, &ROSImageRectifierApp::IntrinsicsCallback, this);
 
-		publisher_image_rectified_ = node_handle.advertise<sensor_msgs::Image>(image_rectified_str, 1);
-		ROS_INFO("[%s] Publishing Rectified image in %s", _NODE_NAME_, image_rectified_str.c_str());
+    publisher_image_rectified_ = node_handle.advertise<sensor_msgs::Image>(image_rectified_str, 1);
+    ROS_INFO("[%s] Publishing Rectified image in %s", _NODE_NAME_, image_rectified_str.c_str());
 
-		ROS_INFO("[%s] Ready. Waiting for data...", _NODE_NAME_);
-		ros::spin();
-		ROS_INFO("[%s] END rect", _NODE_NAME_);
-	}
+    ROS_INFO("[%s] Ready. Waiting for data...", _NODE_NAME_);
+    ros::spin();
+    ROS_INFO("[%s] END rect", _NODE_NAME_);
+  }
 
-	~ROSImageRectifierApp()
-	{
-	}
+  ~ROSImageRectifierApp()
+  {
+  }
 
-	ROSImageRectifierApp()
-	{
-	}
+  ROSImageRectifierApp()
+  {
+  }
 };
 
 int main(int argc, char **argv)
 {
-	ros::init(argc, argv, _NODE_NAME_);
+  ros::init(argc, argv, _NODE_NAME_);
 
-	ROSImageRectifierApp app;
+  ROSImageRectifierApp app;
 
-	app.Run();
+  app.Run();
 
-	return 0;
+  return 0;
 }

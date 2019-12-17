@@ -36,10 +36,10 @@
 #include <pos_db.h>
 #include "autoware_msgs/ObjLabel.h"
 
-#define MYNAME		"pos_uploader"
-#define OWN_TOPIC_NAME	"current_pose"
-#define CAR_TOPIC_NAME	"obj_car/obj_pose"
-#define PERSON_TOPIC_NAME	"obj_person/obj_pose"
+#define MYNAME    "pos_uploader"
+#define OWN_TOPIC_NAME  "current_pose"
+#define CAR_TOPIC_NAME  "obj_car/obj_pose"
+#define PERSON_TOPIC_NAME  "obj_person/obj_pose"
 
 using namespace std;
 
@@ -50,7 +50,7 @@ static std::vector <autoware_msgs::ObjLabel> person_positions_array;
 static size_t car_num = 0;
 static size_t person_num = 0;
 
-static int sleep_msec = 250;		// period
+static int sleep_msec = 250;    // period
 static int use_current_time = 0;
 
 static string db_host_name;
@@ -243,48 +243,48 @@ static void* intervalCall(void *unused)
 
 static void car_locate_cb(const jsk_recognition_msgs::BoundingBoxArray& obj_pose_msg)
 {
-	if (obj_pose_msg.boxes.size() > 0) {
-		geometry_msgs::Point tmpPoint;
-		autoware_msgs::ObjLabel tmpLabel;
+  if (obj_pose_msg.boxes.size() > 0) {
+    geometry_msgs::Point tmpPoint;
+    autoware_msgs::ObjLabel tmpLabel;
 
-		pthread_mutex_lock(&pose_lock_);
+    pthread_mutex_lock(&pose_lock_);
 
-		for (jsk_recognition_msgs::BoundingBox tmpBox : obj_pose_msg.boxes) {
-			tmpPoint.x = tmpBox.pose.position.x;
-			tmpPoint.y = tmpBox.pose.position.y;
-			tmpPoint.z = tmpBox.pose.position.z;
+    for (jsk_recognition_msgs::BoundingBox tmpBox : obj_pose_msg.boxes) {
+      tmpPoint.x = tmpBox.pose.position.x;
+      tmpPoint.y = tmpBox.pose.position.y;
+      tmpPoint.z = tmpBox.pose.position.z;
 
-			tmpLabel.reprojected_pos.push_back(tmpPoint);
-		}
+      tmpLabel.reprojected_pos.push_back(tmpPoint);
+    }
 
-		car_positions_array.push_back(tmpLabel);
-		car_num += obj_pose_msg.boxes.size();
+    car_positions_array.push_back(tmpLabel);
+    car_num += obj_pose_msg.boxes.size();
 
-		pthread_mutex_unlock(&pose_lock_);
-	}
+    pthread_mutex_unlock(&pose_lock_);
+  }
 }
 
 static void person_locate_cb(const jsk_recognition_msgs::BoundingBoxArray &obj_pose_msg)
 {
-	if (obj_pose_msg.boxes.size() > 0) {
-		geometry_msgs::Point tmpPoint;
-		autoware_msgs::ObjLabel tmpLabel;
+  if (obj_pose_msg.boxes.size() > 0) {
+    geometry_msgs::Point tmpPoint;
+    autoware_msgs::ObjLabel tmpLabel;
 
-		pthread_mutex_lock(&pose_lock_);
+    pthread_mutex_lock(&pose_lock_);
 
-		for (jsk_recognition_msgs::BoundingBox tmpBox : obj_pose_msg.boxes) {
-			tmpPoint.x = tmpBox.pose.position.x;
-			tmpPoint.y = tmpBox.pose.position.y;
-			tmpPoint.z = tmpBox.pose.position.z;
+    for (jsk_recognition_msgs::BoundingBox tmpBox : obj_pose_msg.boxes) {
+      tmpPoint.x = tmpBox.pose.position.x;
+      tmpPoint.y = tmpBox.pose.position.y;
+      tmpPoint.z = tmpBox.pose.position.z;
 
-			tmpLabel.reprojected_pos.push_back(tmpPoint);
-		}
+      tmpLabel.reprojected_pos.push_back(tmpPoint);
+    }
 
-		person_positions_array.push_back(tmpLabel);
-		person_num += obj_pose_msg.boxes.size();
+    person_positions_array.push_back(tmpLabel);
+    person_num += obj_pose_msg.boxes.size();
 
-		pthread_mutex_unlock(&pose_lock_);
-	}
+    pthread_mutex_unlock(&pose_lock_);
+  }
 }
 
 static void current_pose_cb(const geometry_msgs::PoseStamped &pose)

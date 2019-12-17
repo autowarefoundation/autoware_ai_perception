@@ -94,11 +94,11 @@ void points_callback(const pcl::PointCloud<pcl::PointXYZI>::ConstPtr &msg)
 
       for (int i = 0; i < (int)pcl_out.points.size(); i++)
       {
-        //    	  fprintf(fp_points,"%.3f %.3f %.3f %.1f\n", pcl_out.points[i].y, pcl_out.points[i].x,
+        //        fprintf(fp_points,"%.3f %.3f %.3f %.1f\n", pcl_out.points[i].y, pcl_out.points[i].x,
         //    pcl_out.points[i].z, pcl_out.points[i].intensity);
         ofs << pcl_out.points[i].x << "," << pcl_out.points[i].y << "," << pcl_out.points[i].z << ","
             << pcl_out.points[i].intensity << std::endl;
-        //    	  ofs << pcl_out.points[i].x << " " << pcl_out.points[i].y << " " << pcl_out.points[i].z << " " <<
+        //        ofs << pcl_out.points[i].x << " " << pcl_out.points[i].y << " " << pcl_out.points[i].z << " " <<
         //    pcl_out.points[i].intensity << std::endl;
       }
       //      fclose(fp_points);

@@ -35,14 +35,14 @@ static int dequeue = 0;
 
 static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
 {
-	enqueue++;
+  enqueue++;
 }
 
 static void ndt_map_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
 {
-	dequeue++;
+  dequeue++;
 
-	std::cout << "(Processed/Input): (" << dequeue << " / " << enqueue << ")" << std::endl;
+  std::cout << "(Processed/Input): (" << dequeue << " / " << enqueue << ")" << std::endl;
 }
 
 int main(int argc, char **argv)

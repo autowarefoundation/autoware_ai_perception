@@ -313,11 +313,11 @@ double adjust3d(PointPtr scan, int num, PosturePtr initial, int target)
     {
       if (nd[j]->num > 10 && nd[j]->sign == 1)
       {
-        //	double e;
+        //  double e;
         esum += calc_summand3d(&p, nd[j], pose, g, hH, qd3, dist);
         add_matrix6d(Hsumh, hH, Hsumh);
 
-        //	  dist =1;
+        //    dist =1;
         gsum[0] += g[0];                //*nd[j]->w;
         gsum[1] += g[1];                //*nd[j]->w;
         gsum[2] += g[2] + pose->z * 0;  //*nd[j]->w;
