@@ -368,10 +368,15 @@ static double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 }
 static void odom_callback(const nav_msgs::Odometry::ConstPtr& input)
 {
-  // std::cout << __func__ << std::endl;
-
   odom = *input;
   odom_calc(input->header.stamp);
+}
+
+static void vehicle_twist_callback(const geometry_msgs::TwistStampedConstPtr& msg)
+{
+  odom.header = msg->header;
+  odom.twist.twist = msg->twist;
+  odom_calc(odom.header.stamp);
 }
 
 static void imuUpsideDown(const sensor_msgs::Imu::Ptr input)
@@ -1039,8 +1044,9 @@ int main(int argc, char** argv)
   ros::Subscriber param_sub = nh.subscribe("config/ndt_mapping", 10, param_callback);
   ros::Subscriber output_sub = nh.subscribe("config/ndt_mapping_output", 10, output_callback);
   ros::Subscriber points_sub = nh.subscribe("points_raw", 100000, points_callback);
-  ros::Subscriber odom_sub = nh.subscribe("/vehicle/odom", 100000, odom_callback);
+  ros::Subscriber odom_sub = nh.subscribe("vehicle/odom", 100000, odom_callback);
   ros::Subscriber imu_sub = nh.subscribe(_imu_topic, 100000, imu_callback);
+  ros::Subscriber twist_sub = nh.subscribe("vehicle/twist", 100000, vehicle_twist_callback);
 
   ros::spin();
 

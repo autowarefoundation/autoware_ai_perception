@@ -202,7 +202,7 @@ static std::chrono::time_point<std::chrono::system_clock> matching_start, matchi
 static ros::Publisher time_ndt_matching_pub;
 static std_msgs::Float32 time_ndt_matching;
 
-static int _queue_size = 1000;
+static int _queue_size = 1;
 
 static ros::Publisher ndt_stat_pub;
 static autoware_msgs::NDTStat ndt_stat_msg;
@@ -840,10 +840,15 @@ static double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 
 static void odom_callback(const nav_msgs::Odometry::ConstPtr& input)
 {
-  // std::cout << __func__ << std::endl;
-
   odom = *input;
   odom_calc(input->header.stamp);
+}
+
+static void vehicle_twist_callback(const geometry_msgs::TwistStampedConstPtr& msg)
+{
+  odom.header = msg->header;
+  odom.twist.twist = msg->twist;
+  odom_calc(odom.header.stamp);
 }
 
 static void imuUpsideDown(const sensor_msgs::Imu::Ptr input)
@@ -1670,8 +1675,9 @@ int main(int argc, char** argv)
   //  ros::Subscriber map_sub = nh.subscribe("points_map", 1, map_callback);
   ros::Subscriber initialpose_sub = nh.subscribe("initialpose", 10, initialpose_callback);
   ros::Subscriber points_sub = nh.subscribe("filtered_points", _queue_size, points_callback);
-  ros::Subscriber odom_sub = nh.subscribe("/vehicle/odom", _queue_size * 10, odom_callback);
+  ros::Subscriber odom_sub = nh.subscribe("vehicle/odom", _queue_size * 10, odom_callback);
   ros::Subscriber imu_sub = nh.subscribe(_imu_topic.c_str(), _queue_size * 10, imu_callback);
+  ros::Subscriber twist_sub = nh.subscribe("vehicle/twist", 10, vehicle_twist_callback);
 
   pthread_t thread;
   pthread_create(&thread, NULL, thread_func, NULL);
