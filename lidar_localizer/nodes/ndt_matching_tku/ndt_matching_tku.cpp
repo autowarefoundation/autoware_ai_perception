@@ -67,7 +67,8 @@ int g_use_gnss;
 int g_map_update = 1;
 double g_ini_x, g_ini_y, g_ini_z, g_ini_roll, g_ini_pitch, g_ini_yaw;
 
-static double _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
+static float _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
+static std::vector<float> _tf_baselink2primarylidar;
 static Eigen::Matrix4f tf_btol, tf_ltob;  // tf between base_link and localizer
 static tf::Quaternion q_local_to_global, q_global_to_local;
 static Eigen::Matrix4f tf_local_to_global, tf_global_to_local;
@@ -457,36 +458,24 @@ int main(int argc, char *argv[])
   private_nh.getParam("init_yaw", g_ini_yaw);
   private_nh.getParam("use_gnss", g_use_gnss);
 
-  if (!nh.getParam("tf_x", _tf_x))
+  if (!nh.getParam("tf_baselink2primarylidar", _tf_baselink2primarylidar))
   {
-    std::cout << "tf_x is not set." << std::endl;
+    std::cout << "baselink to primary lidar transform is not set." << std::endl;
     return 1;
   }
-  if (!nh.getParam("tf_y", _tf_y))
-  {
-    std::cout << "tf_y is not set." << std::endl;
+
+  // translation x, y, z, yaw, pitch, and roll
+  if (_tf_baselink2primarylidar.size() != 6) {
+    std::cout << "baselink to primary lidar transform is not valid." << std::endl;
     return 1;
   }
-  if (!nh.getParam("tf_z", _tf_z))
-  {
-    std::cout << "tf_z is not set." << std::endl;
-    return 1;
-  }
-  if (!nh.getParam("tf_roll", _tf_roll))
-  {
-    std::cout << "tf_roll is not set." << std::endl;
-    return 1;
-  }
-  if (!nh.getParam("tf_pitch", _tf_pitch))
-  {
-    std::cout << "tf_pitch is not set." << std::endl;
-    return 1;
-  }
-  if (!nh.getParam("tf_yaw", _tf_yaw))
-  {
-    std::cout << "tf_yaw is not set." << std::endl;
-    return 1;
-  }
+
+  _tf_x = _tf_baselink2primarylidar[0];
+  _tf_y = _tf_baselink2primarylidar[1];
+  _tf_z = _tf_baselink2primarylidar[2];
+  _tf_yaw = _tf_baselink2primarylidar[3];
+  _tf_pitch = _tf_baselink2primarylidar[4];
+  _tf_roll = _tf_baselink2primarylidar[5];
 
   Eigen::Translation3f tl_btol(_tf_x, _tf_y, _tf_z);                 // tl: translation
   Eigen::AngleAxisf rot_x_btol(_tf_roll, Eigen::Vector3f::UnitX());  // rot: rotation
