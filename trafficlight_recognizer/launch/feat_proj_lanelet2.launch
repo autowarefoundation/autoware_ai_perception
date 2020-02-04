@@ -3,8 +3,8 @@
   <arg name="camera_info_src" default="/camera_info"/>
   <arg name="use_path_info" default="false"/> <!-- USE VectorMap Server to publish only TrafficSignals on current lane-->
 
-  <node pkg="trafficlight_recognizer" type="feat_proj_lanelet2" name="feature_proj_lanelet2" output="log">
-    <remap from="camera_info" to="(arg camera_id)/camera_info"/>
+  <remap from="camera_info" to="(arg camera_id)/camera_info"/>
+  <node pkg="trafficlight_recognizer" type="feat_proj_lanelet2" name="feature_proj_lanelet2" output="screen">
     <param name="camera_frame" type="str" value="$(arg camera_id)"/>
     <param name="use_path_info" type="bool" value="$(arg use_path_info)"/>
   </node>

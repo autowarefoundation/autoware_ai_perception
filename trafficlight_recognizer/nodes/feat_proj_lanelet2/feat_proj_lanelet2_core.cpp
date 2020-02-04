@@ -353,7 +353,7 @@ lanelet::ConstLineString3d FeatProjLanelet2::createDummyLightBulbString(const la
   return static_cast<lanelet::ConstLineString3d>(bounding_box);
 }
 
-// find signals in camera fram and create Signals message
+// find signals in camera frame and create Signals message
 void FeatProjLanelet2::findSignalsInCameraFrame(const std::vector<lanelet::AutowareTrafficLightConstPtr>& visible_aw_tl,
                                                 autoware_msgs::Signals* signal_in_frame)
 {
