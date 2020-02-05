@@ -38,6 +38,8 @@
 
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -140,8 +142,6 @@ static double min_scan_range = 5.0;
 static double max_scan_range = 200.0;
 static double min_add_scan_shift = 1.0;
 
-static float _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
-static std::vector<float> _tf_baselink2primarylidar;
 static Eigen::Matrix4f tf_btol, tf_ltob;
 
 static bool _use_imu = false;
@@ -972,27 +972,47 @@ int main(int argc, char** argv)
   std::cout << "imu_topic: " << _imu_topic << std::endl;
   std::cout << "incremental_voxel_update: " << _incremental_voxel_update << std::endl;
 
-  if (!nh.getParam("tf_baselink2primarylidar", _tf_baselink2primarylidar))
+  std::string lidar_frame;
+  nh.param("localizer", lidar_frame, std::string("lidar"));
+  tf::TransformListener tf_listener;
+  tf::StampedTransform tf_baselink2primarylidar;
+  try
   {
-    std::cout << "baselink to primary lidar transform is not set." << std::endl;
-    return 1;
+    tf_listener.waitForTransform("base_link", lidar_frame, ros::Time(), ros::Duration(1.0));
+    tf_listener.lookupTransform("base_link", lidar_frame, ros::Time(), tf_baselink2primarylidar);
   }
+  catch (tf::TransformException& ex)
+  {
+    ROS_WARN("Query base_link to primary lidar frame through TF tree failed: %s", ex.what());
 
-  // translation x, y, z, yaw, pitch, and roll
-  if (_tf_baselink2primarylidar.size() != 6) {
-    std::cout << "baselink to primary lidar transform is not valid." << std::endl;
-    return 1;
+    // fall back to ros parameter for the transform
+    std::vector<double> bl2pl_vec;
+    if (!nh.getParam("tf_baselink2primarylidar", bl2pl_vec))
+    {
+      std::cout << "ros parameter tf_baselink2primarylidar is not set." << std::endl;
+      return 1;
+    }
+
+    // translation x, y, z, yaw, pitch, and roll
+    if (bl2pl_vec.size() != 6)
+    {
+      std::cout << "ros parameter tf_baselink2primarylidar is not valid." << std::endl;
+      return 1;
+    }
+    ROS_WARN("Query through ros parameter tf_baselink2primarylidar succeeded.");
+
+    tf::Vector3 trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
+    tf::Quaternion quat;
+    quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
+    tf_baselink2primarylidar.setOrigin(trans);
+    tf_baselink2primarylidar.setRotation(quat);
   }
+  Eigen::Affine3d tf_affine;
+  tf::transformTFToEigen(tf_baselink2primarylidar, tf_affine);
+  tf_btol = tf_affine.matrix().cast<float>();
+  tf_ltob = tf_btol.inverse();
 
-  _tf_x = _tf_baselink2primarylidar[0];
-  _tf_y = _tf_baselink2primarylidar[1];
-  _tf_z = _tf_baselink2primarylidar[2];
-  _tf_yaw = _tf_baselink2primarylidar[3];
-  _tf_pitch = _tf_baselink2primarylidar[4];
-  _tf_roll = _tf_baselink2primarylidar[5];
-
-  std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
-            << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
+  std::cout << "tf_baselink2primarylidar: \n" << tf_btol << std::endl;
 
 #ifndef CUDA_FOUND
   if (_method_type == MethodType::PCL_ANH_GPU)
@@ -1012,13 +1032,6 @@ int main(int argc, char** argv)
     exit(1);
   }
 #endif
-
-  Eigen::Translation3f tl_btol(_tf_x, _tf_y, _tf_z);                 // tl: translation
-  Eigen::AngleAxisf rot_x_btol(_tf_roll, Eigen::Vector3f::UnitX());  // rot: rotation
-  Eigen::AngleAxisf rot_y_btol(_tf_pitch, Eigen::Vector3f::UnitY());
-  Eigen::AngleAxisf rot_z_btol(_tf_yaw, Eigen::Vector3f::UnitZ());
-  tf_btol = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
-  tf_ltob = tf_btol.inverse();
 
   map.header.frame_id = "map";
 

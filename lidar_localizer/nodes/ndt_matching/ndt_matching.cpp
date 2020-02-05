@@ -47,6 +47,7 @@
 #include <tf/transform_broadcaster.h>
 #include <tf/transform_datatypes.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -209,11 +210,9 @@ static autoware_msgs::NDTStat ndt_stat_msg;
 
 static double predict_pose_error = 0.0;
 
-static float _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
-static std::vector<float> _tf_baselink2primarylidar;
+// hold transfrom from baselink to primary lidar
 static Eigen::Matrix4f tf_btol;
 
-static std::string _localizer = "velodyne";
 static std::string _offset = "linear";  // linear, zero, quadratic
 
 static ros::Publisher ndt_reliability_pub;
@@ -1561,30 +1560,44 @@ int main(int argc, char** argv)
   private_nh.getParam("imu_topic", _imu_topic);
   private_nh.param<double>("gnss_reinit_fitness", _gnss_reinit_fitness, 500.0);
 
-  if (nh.getParam("localizer", _localizer) == false)
+  std::string lidar_frame;
+  nh.param("localizer", lidar_frame, std::string("lidar"));
+  tf::TransformListener tf_listener;
+  tf::StampedTransform tf_baselink2primarylidar;
+  try
   {
-    std::cout << "localizer is not set." << std::endl;
-    return 1;
+    tf_listener.waitForTransform("base_link", lidar_frame, ros::Time(), ros::Duration(1.0));
+    tf_listener.lookupTransform("base_link", lidar_frame, ros::Time(), tf_baselink2primarylidar);
   }
-
-  if (!nh.getParam("tf_baselink2primarylidar", _tf_baselink2primarylidar))
+  catch (tf::TransformException& ex)
   {
-    std::cout << "baselink to primary lidar transform is not set." << std::endl;
-    return 1;
-  }
+    ROS_WARN("Query base_link to primary lidar frame through TF tree failed: %s", ex.what());
+    
+    // fall back to ros parameter for the transform
+    std::vector<double> bl2pl_vec;
+    if (!nh.getParam("tf_baselink2primarylidar", bl2pl_vec))
+    {
+      std::cout << "ros parameter tf_baselink2primarylidar is not set." << std::endl;
+      return 1;
+    }
 
-  // translation x, y, z, yaw, pitch, and roll
-  if (_tf_baselink2primarylidar.size() != 6) {
-    std::cout << "baselink to primary lidar transform is not valid." << std::endl;
-    return 1;
-  }
+    // translation x, y, z, yaw, pitch, and roll
+    if (bl2pl_vec.size() != 6)
+    {
+      std::cout << "ros parameter tf_baselink2primarylidar is not valid." << std::endl;
+      return 1;
+    }
+    ROS_WARN("Query through ros parameter tf_baselink2primarylidar succeeded.");
 
-  _tf_x = _tf_baselink2primarylidar[0];
-  _tf_y = _tf_baselink2primarylidar[1];
-  _tf_z = _tf_baselink2primarylidar[2];
-  _tf_yaw = _tf_baselink2primarylidar[3];
-  _tf_pitch = _tf_baselink2primarylidar[4];
-  _tf_roll = _tf_baselink2primarylidar[5];
+    tf::Vector3 trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
+    tf::Quaternion quat;
+    quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
+    tf_baselink2primarylidar.setOrigin(trans);
+    tf_baselink2primarylidar.setRotation(quat);
+  }
+  Eigen::Affine3d tf_affine;
+  tf::transformTFToEigen(tf_baselink2primarylidar, tf_affine);
+  tf_btol = tf_affine.matrix().cast<float>();
 
   std::cout << "-----------------------------------------------------------------" << std::endl;
   std::cout << "Log file: " << filename << std::endl;
@@ -1598,10 +1611,9 @@ int main(int argc, char** argv)
   std::cout << "use_imu: " << _use_imu << std::endl;
   std::cout << "imu_upside_down: " << _imu_upside_down << std::endl;
   std::cout << "imu_topic: " << _imu_topic << std::endl;
-  std::cout << "localizer: " << _localizer << std::endl;
+  std::cout << "localizer: " << lidar_frame << std::endl;
   std::cout << "gnss_reinit_fitness: " << _gnss_reinit_fitness << std::endl;
-  std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
-            << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
+  std::cout << "tf_baselink2primarylidar: \n" << tf_btol << std::endl;
   std::cout << "-----------------------------------------------------------------" << std::endl;
 
 #ifndef CUDA_FOUND
@@ -1622,12 +1634,6 @@ int main(int argc, char** argv)
     exit(1);
   }
 #endif
-
-  Eigen::Translation3f tl_btol(_tf_x, _tf_y, _tf_z);                 // tl: translation
-  Eigen::AngleAxisf rot_x_btol(_tf_roll, Eigen::Vector3f::UnitX());  // rot: rotation
-  Eigen::AngleAxisf rot_y_btol(_tf_pitch, Eigen::Vector3f::UnitY());
-  Eigen::AngleAxisf rot_z_btol(_tf_yaw, Eigen::Vector3f::UnitZ());
-  tf_btol = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
 
   // Updated in initialpose_callback or gnss_callback
   initial_pose.x = 0.0;
