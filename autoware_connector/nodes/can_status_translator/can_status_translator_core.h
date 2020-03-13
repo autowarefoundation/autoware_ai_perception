@@ -27,6 +27,7 @@
 // User Defined Includes
 #include "autoware_can_msgs/CANInfo.h"
 #include "autoware_msgs/VehicleStatus.h"
+#include "autoware_msgs/Gear.h"
 #include "can_vehicle_info.h"
 
 namespace autoware_connector
