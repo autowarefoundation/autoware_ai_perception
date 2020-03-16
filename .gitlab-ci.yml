@@ -1,7 +1,7 @@
 stages:
   - build
   - deploy
-  
+
 variables:
   VCS_FILE: build_depends.repos
   AUTOWARE_CROSS_TARGET_PLATFORM: generic-aarch64
@@ -41,7 +41,7 @@ variables:
   artifacts:
     paths:
       - $CI_PROJECT_DIR/coverage.tar.gz
-    expire_in: 48 hrs 
+    expire_in: 48 hrs
   coverage: /\s*lines.*:\s(\d+\.\d+\%\s\(\d+\sof\s\d+.*\))/
 
 .build_cuda: &build_cuda
@@ -76,7 +76,7 @@ variables:
   script:
     - mkdir -p src_tmp/$CI_PROJECT_NAME && mv `find -maxdepth 1 -not -name . -not -name src_tmp -not -name $VCS_FILE` src_tmp/$CI_PROJECT_NAME && mv src_tmp/ src/
     - apt update -qq && apt install -y python3-vcstool git wget
-    - wget https://gitlab.com/autowarefoundation/autoware.ai/autoware/raw/master/ros/cross_toolchain.cmake
+    - wget https://gitlab.com/autowarefoundation/autoware.ai/docker/raw/master/crossbuild/cross_toolchain.cmake
     - source ${AUTOWARE_SYSROOT}/opt/ros/${ROS_DISTRO}/setup.bash
     - vcs validate < $VCS_FILE
     - vcs import src/ < $VCS_FILE
