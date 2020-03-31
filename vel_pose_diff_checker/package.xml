@@ -14,7 +14,9 @@
   <depend>std_msgs</depend>
   <depend>geometry_msgs</depend>
   <depend>autoware_msgs</depend>
+  <depend>autoware_system_msgs</depend>
   <depend>amathutils_lib</depend>
+  <depend>autoware_health_checker</depend>
   <depend>roslint</depend>
 
 </package>

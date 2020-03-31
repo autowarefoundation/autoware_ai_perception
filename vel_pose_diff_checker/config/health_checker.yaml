@@ -1,0 +1,13 @@
+health_checker:
+  vel_pose_diff_checker_diff_pose_topic_time:
+    default
+  vel_pose_diff_checker_diff_twist_topic_time:
+    default
+  vel_pose_diff_checker_diff_position:
+    default
+  vel_pose_diff_checker_diff_position_median:
+    default
+  vel_pose_diff_checker_diff_angle:
+    default
+  vel_pose_diff_checker_diff_angle_median:
+    default

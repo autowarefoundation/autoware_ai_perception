@@ -25,9 +25,7 @@ class ValueTimeQueue
 {
   struct ValueTime
   {
-    ValueTime(const double a_value, const ros::Time &a_stamp)
-      : value(a_value)
-      , stamp(a_stamp)
+    ValueTime(const double a_value, const ros::Time& a_stamp) : value(a_value), stamp(a_stamp)
     {
     }
 
@@ -35,16 +33,16 @@ class ValueTimeQueue
     ros::Time stamp;
   };
 
-  public:
-    ValueTimeQueue();
-    explicit ValueTimeQueue(const double window_size_sec);
-    void addValueTime(const double value, const ros::Time &a_stamp);
-    double getMedianValue() const;
-    void setWindowSizeSec(const double time_window_size_sec);
+public:
+  ValueTimeQueue();
+  explicit ValueTimeQueue(const double window_size_sec);
+  void addValueTime(const double value, const ros::Time& a_stamp);
+  double getMedianValue() const;
+  void setWindowSizeSec(const double time_window_size_sec);
 
-  private:
-    double window_size_sec_;
-    std::deque<ValueTime> queue_;
+private:
+  double window_size_sec_;
+  std::deque<ValueTime> queue_;
 };
 
 #endif  // VEL_POSE_DIFF_CHECKER_VALUE_TIME_QUEUE_H

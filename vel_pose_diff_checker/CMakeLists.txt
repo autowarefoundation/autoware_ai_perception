@@ -8,7 +8,9 @@ endif()
 
 find_package(catkin REQUIRED COMPONENTS
   amathutils_lib
+  autoware_health_checker
   autoware_msgs
+  autoware_system_msgs
   geometry_msgs
   roscpp
   roslint
@@ -39,7 +41,7 @@ add_dependencies(${PROJECT_NAME}
 )
 
 target_link_libraries(${PROJECT_NAME}
- ${catkin_LIBRARIES}
+  ${catkin_LIBRARIES}
 )
 
 install(TARGETS ${PROJECT_NAME}
@@ -53,6 +55,11 @@ install(DIRECTORY launch/
   PATTERN ".svn" EXCLUDE
 )
 
+install(DIRECTORY config/
+  DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/config
+  PATTERN ".svn" EXCLUDE
+)
+
 set(ROSLINT_CPP_OPTS "--filter=-build/c++14")
 roslint_cpp()
 
@@ -62,8 +69,8 @@ if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
   add_rostest_gtest(
     vel_pose_diff_checker-test
-    test/test_vel_pose_diff_checker.test 
-    test/src/test_vel_pose_diff_checker.cpp 
+    test/test_vel_pose_diff_checker.test
+    test/src/test_vel_pose_diff_checker.cpp
     src/vel_pose_diff_checker_core.cpp
     src/value_time_queue.cpp
   )
