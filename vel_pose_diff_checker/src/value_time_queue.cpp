@@ -20,18 +20,15 @@
 #include <deque>
 #include <algorithm>
 
-
-ValueTimeQueue::ValueTimeQueue()
-  : window_size_sec_(1.0)
+ValueTimeQueue::ValueTimeQueue() : window_size_sec_(1.0)
 {
 }
 
-ValueTimeQueue::ValueTimeQueue(const double window_size_sec)
-  : window_size_sec_(window_size_sec)
+ValueTimeQueue::ValueTimeQueue(const double window_size_sec) : window_size_sec_(window_size_sec)
 {
 }
 
-void ValueTimeQueue::addValueTime(const double value, const ros::Time &a_stamp)
+void ValueTimeQueue::addValueTime(const double value, const ros::Time& a_stamp)
 {
   const auto ros_time_now = ros::Time::now();
   queue_.push_back(ValueTime(value, a_stamp));
@@ -58,10 +55,7 @@ double ValueTimeQueue::getMedianValue() const
   std::deque<ValueTime> queue_tmp = queue_;
   const size_t median_index = queue_tmp.size() / 2;
   std::nth_element(std::begin(queue_tmp), std::begin(queue_tmp) + median_index, std::end(queue_tmp),
-    [](const ValueTime &lhs, const ValueTime &rhs)
-    {
-      return lhs.value < rhs.value;
-    });  // NOLINT
+                   [](const ValueTime& lhs, const ValueTime& rhs) { return lhs.value < rhs.value; });  // NOLINT
 
   return queue_tmp.at(median_index).value;
 }

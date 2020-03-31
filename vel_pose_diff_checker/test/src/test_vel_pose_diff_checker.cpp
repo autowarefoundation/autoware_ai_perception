@@ -37,12 +37,10 @@ class VelPoseDiffCheckerTestSuite : public ::testing::Test
     ~VelPoseDiffCheckerTestSuite()
     {
     }
-
-    void getStatus(VelPoseDiffChecker::Status* status)
+    uint8_t getErrorLevel()
     {
-      *status = obj_ptr_->checkDiff();
+      return obj_ptr_->getErrorLevelWithHealthChecker(obj_ptr_->checkDiff());
     }
-
     std::unique_ptr<VelPoseDiffChecker> obj_ptr_;
 
     ros::NodeHandle nh_;
@@ -51,6 +49,7 @@ class VelPoseDiffCheckerTestSuite : public ::testing::Test
   protected:
     virtual void SetUp()
     {
+      nh_.setParam("/health_checker/vel_pose_diff_checker_diff_position", "default");
       obj_ptr_ = std::make_unique<VelPoseDiffChecker>(nh_, private_nh_);
     };
     virtual void TearDown()
@@ -85,7 +84,6 @@ TEST_F(VelPoseDiffCheckerTestSuite, checkDiff)
   constexpr double dt = 0.1;
   constexpr double linear_x = 1.0;
   constexpr double noise = 1.0;
-  VelPoseDiffChecker::Status status;
 
   // TEST No Difference
   for (size_t i = 0; i < 10; ++i)
@@ -103,8 +101,7 @@ TEST_F(VelPoseDiffCheckerTestSuite, checkDiff)
     ros::spinOnce();
     ros::Duration(dt).sleep();
   }
-  getStatus(&status);
-  ASSERT_TRUE(status == VelPoseDiffChecker::Status::OK);
+  ASSERT_EQ(getErrorLevel(), autoware_system_msgs::DiagnosticStatus::OK);
 
   // TEST Detect Difference
   for (size_t i = 0; i < 5; ++i)
@@ -122,8 +119,7 @@ TEST_F(VelPoseDiffCheckerTestSuite, checkDiff)
     ros::spinOnce();
     ros::Duration(dt).sleep();
   }
-  getStatus(&status);
-  ASSERT_TRUE(status == VelPoseDiffChecker::Status::ERROR);
+  ASSERT_EQ(getErrorLevel(), autoware_system_msgs::DiagnosticStatus::ERROR);
 }
 
 int main(int argc, char** argv)

@@ -5,14 +5,15 @@
 
   <arg name="loop_rate_hz" default="10.0"/>
   <arg name="comparison_window_size_sec" default="1.0"/>
-  <arg name="topic_timeout_sec" default="0.3"/>
   <arg name="moving_median_window_size_sec" default="2.0"/>
+  <arg name="topic_timeout_sec" default="0.3"/>
   <arg name="diff_position_threshold_meter" default="1.0"/>
   <arg name="diff_position_median_threshold_meter" default="0.5"/>
   <arg name="diff_angle_threshold_rad" default="0.1"/>
   <arg name="diff_angle_median_threshold_rad" default="0.05"/>
-  <arg name="enable_emergency_to_twist_gate" default="true"/>
-  
+
+  <rosparam command="load" file="$(find vel_pose_diff_checker)/config/health_checker.yaml" />
+
   <node pkg="vel_pose_diff_checker" type="vel_pose_diff_checker" name="vel_pose_diff_checker" output="log">
     <!-- Input Topics -->
     <remap from="current_pose" to="$(arg input_pose_name)" />
@@ -27,7 +28,6 @@
     <param name="diff_position_median_threshold_meter" value="$(arg diff_position_median_threshold_meter)" />
     <param name="diff_angle_threshold_rad" value="$(arg diff_angle_threshold_rad)" />
     <param name="diff_angle_median_threshold_rad" value="$(arg diff_angle_median_threshold_rad)" />
-    <param name="enable_emergency_to_twist_gate" value="$(arg enable_emergency_to_twist_gate)" />
-</node>
+  </node>
 
 </launch>
