@@ -46,8 +46,8 @@ static constexpr uint32_t SUBSCRIBE_QUEUE_SIZE = 1000;
 
 static int adjust_proj_x = 0;
 static int adjust_proj_y = 0;
-static float nearPlane = 0.0;
-static float farPlane = 0.0;
+static float near_plane_ = 0.0;
+static float far_plane_ = 0.0;
 
 typedef struct
 {
@@ -369,8 +369,8 @@ int main(int argc, char* argv[])
   ros::NodeHandle private_nh("~");
   std::string cameraInfo_topic_name;
   private_nh.param<std::string>("camera_info_topic", cameraInfo_topic_name, "/camera_info");
-  private_nh.param<float>("roi_search_min_distance", nearPlane, 1.0);
-  private_nh.param<float>("roi_search_max_distance", farPlane, 200.0);
+  private_nh.param<float>("roi_search_min_distance", near_plane_, 1.0);
+  private_nh.param<float>("roi_search_max_distance", far_plane_, 200.0);
 
   /* get camera ID */
   camera_id_str = cameraInfo_topic_name;
