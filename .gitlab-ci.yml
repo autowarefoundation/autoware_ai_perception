@@ -103,7 +103,7 @@ build_melodic_arm:
   image: autoware/arm64v8:bleedingedge-melodic-base
   <<: *build_common
   only:
-    - master
+    - branches@autowarefoundation/autoware.ai/core_perception
 
 build_melodic_cuda:
   stage: build
