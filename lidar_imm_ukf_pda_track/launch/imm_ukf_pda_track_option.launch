@@ -57,7 +57,7 @@
       <param name="lane_direction_chi_threshold" value="$(arg lane_direction_chi_threshold)" />
       <param name="nearest_lane_distance_threshold" value="$(arg nearest_lane_distance_threshold)" />
       <param name="tracking_frame" value="$(arg tracking_frame)" />
-      <param name="vectormap_frame" value="$(arg vectormap_frame)" />
+      <param name="vectormap_frame" value="$(arg map_frame)" />
       <param name="use_sukf" value="$(arg use_sukf)" />
       <param name="use_vectormap" value="$(arg use_map_info)" />
       <param name="merge_distance_threshold" value="$(arg merge_distance_threshold)" />
