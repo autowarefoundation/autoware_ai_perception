@@ -1,0 +1,53 @@
+name: CUDA CI workflow
+
+on:
+  pull_request:
+  push:
+    branches:
+      - master
+
+jobs:
+
+  build-melodic:
+
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest] #[ubuntu-latest, self-hosted]
+      fail-fast: false
+
+    container:
+      image: autoware/autoware:bleedingedge-melodic-base-cuda
+      env:
+        VCS_FILE: build_depends.repos
+        ROS_DISTRO: melodic
+      options: --user 1001
+
+    steps:
+
+    - name: Checkout repo
+      uses: actions/checkout@v2
+
+    - name: Prepare repo
+      run: |
+        mkdir -p src_tmp/ && mv `find -maxdepth 1 -not -name . -not -name src_tmp -not -name $VCS_FILE` src_tmp/ && mv src_tmp/ src/
+        vcs validate < $VCS_FILE
+        vcs import src/ < $VCS_FILE
+        rosdep update
+        rosdep install -y --from-paths src --ignore-src --rosdistro $ROS_DISTRO
+        mkdir -p depends_ws/src
+        mv src/depends depends_ws/src
+
+    - name: Build depends repos
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        cd depends_ws; colcon build; cd ..'
+
+    - name: Build and test repo
+      run: |
+        bash -c 'source /opt/ros/$ROS_DISTRO/setup.bash; \
+        source depends_ws/install/local_setup.bash; \
+        colcon build --cmake-args -DCMAKE_BUILD_TYPE=Debug; \
+        colcon build --cmake-target tests --cmake-args -DCMAKE_BUILD_TYPE=Debug; \
+        colcon test; \
+        colcon test-result --verbose'
