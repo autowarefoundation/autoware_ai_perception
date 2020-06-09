@@ -29,9 +29,8 @@
 #include <pcl/features/normal_3d_omp.h>
 #include <pcl/filters/extract_indices.h>
 #include <velodyne_pointcloud/point_types.h>
+
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
-
-
 #include "points_preprocessor/ray_ground_filter/ray_ground_filter.h"
 
 void RayGroundFilter::update_config_params(const autoware_config_msgs::ConfigRayGroundFilter::ConstPtr& param)
@@ -157,6 +156,8 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor
 {
   out_ground_indices->indices.clear();
   out_no_ground_indices->indices.clear();
+  const float local_slope_ratio = tan(DEG2RAD(local_max_slope_));
+  const float general_slope_ratio = tan(DEG2RAD(general_max_slope_));
 #pragma omp for
   for (size_t i = 0; i < in_radial_ordered_clouds.size(); i++)  // sweep through each radial division
   {
@@ -167,9 +168,9 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor
     for (size_t j = 0; j < in_radial_ordered_clouds[i].size(); j++)  // loop through each point in the radial div
     {
       float points_distance = in_radial_ordered_clouds[i][j].radius - prev_radius;
-      float height_threshold = tan(DEG2RAD(local_max_slope_)) * points_distance;
+      float height_threshold = local_slope_ratio * points_distance;
       float current_height = in_radial_ordered_clouds[i][j].point.z;
-      float general_height_threshold = tan(DEG2RAD(general_max_slope_)) * in_radial_ordered_clouds[i][j].radius;
+      float general_height_threshold = general_slope_ratio * in_radial_ordered_clouds[i][j].radius;
 
       // for points which are very close causing the height threshold to be tiny, set a minimum value
       if (points_distance > concentric_divider_distance_ && height_threshold < min_height_threshold_)
