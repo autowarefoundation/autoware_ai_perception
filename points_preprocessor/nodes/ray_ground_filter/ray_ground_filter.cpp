@@ -385,7 +385,7 @@ void RayGroundFilter::Run()
   node_handle_.param("local_max_slope", local_max_slope_, 5.0);
   ROS_INFO("local_max_slope[deg]: %f", local_max_slope_);
 
-  node_handle_.param("radial_divider_angle", radial_divider_angle_, 0.1);  // 1 degree default
+  node_handle_.param("radial_divider_angle", radial_divider_angle_, 0.1);  // 0.1 degree default
   ROS_INFO("radial_divider_angle[deg]: %f", radial_divider_angle_);
   node_handle_.param("concentric_divider_distance", concentric_divider_distance_, 0.0);  // 0.0 meters default
   ROS_INFO("concentric_divider_distance[meters]: %f", concentric_divider_distance_);
@@ -395,7 +395,7 @@ void RayGroundFilter::Run()
   ROS_INFO("clipping_height[meters]: %f", clipping_height_);
   node_handle_.param("min_point_distance", min_point_distance_, 1.85);  // 1.85 meters default
   ROS_INFO("min_point_distance[meters]: %f", min_point_distance_);
-  node_handle_.param("reclass_distance_threshold", reclass_distance_threshold_, 0.2);  // 0.5 meters default
+  node_handle_.param("reclass_distance_threshold", reclass_distance_threshold_, 0.2);  // 0.2 meters default
   ROS_INFO("reclass_distance_threshold[meters]: %f", reclass_distance_threshold_);
 
 
