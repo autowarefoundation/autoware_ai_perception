@@ -43,6 +43,7 @@
 
 #define USE_ATAN_APPROXIMATION
 
+
 class RayGroundFilter
 {
 private:
@@ -77,7 +78,13 @@ private:
     pcl::PointXYZI point;
     float radius;  // cylindric coords on XY Plane
     size_t original_index;  // index of this point in the source pointcloud
+
+    PointXYZIRTColor(pcl::PointXYZI point, float radius, size_t original_index)
+        : point(point), radius(radius), original_index(original_index)
+    {}
   };
+
+
   typedef std::vector<PointXYZIRTColor> PointCloudXYZIRTColor;
 
   void update_config_params(const autoware_config_msgs::ConfigRayGroundFilter::ConstPtr& param);
@@ -101,11 +108,9 @@ private:
    *
    * @param[in] in_cloud Input Point Cloud to be organized in radial segments
    * @param[out] out_organized_points Custom Point Cloud filled with XYZRTZColor data
-   * @param[out] out_radial_divided_indices Indices of the points in the original cloud for each radial segment
    * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
    */
   void ConvertXYZIToRTZColor(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-                             const std::shared_ptr<PointCloudXYZIRTColor>& out_organized_points,
                              const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds);
 
   /*!

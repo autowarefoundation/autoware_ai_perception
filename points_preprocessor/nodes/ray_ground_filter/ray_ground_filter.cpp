@@ -97,20 +97,26 @@ void RayGroundFilter::publish_cloud(const ros::Publisher& in_publisher,
  *
  * @param[in] in_cloud Input Point Cloud to be organized in radial segments
  * @param[out] out_organized_points Custom Point Cloud filled with XYZRTZColor data
- * @param[out] out_radial_divided_indices Indices of the points in the original cloud for each radial segment
  * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
  */
 void RayGroundFilter::ConvertXYZIToRTZColor(
     const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-    const std::shared_ptr<PointCloudXYZIRTColor>& out_organized_points,
     const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds)
 {
-  out_organized_points->resize(in_cloud->points.size());
   out_radial_ordered_clouds->resize(radial_dividers_num_);
+
+  const int mean_ray_count = in_cloud->points.size()/radial_dividers_num_;
+  // In theory reserving more than the average memory would reduce even more the number of realloc
+  // but it would also make the reserving takes longer. One or two times the average are pretty
+  // much identical in term of speedup. Three seems a bit worse.
+  const int reserve_count = mean_ray_count;
+  for (auto it = out_radial_ordered_clouds->begin(); it != out_radial_ordered_clouds->end(); it++)
+  {
+    it->reserve(reserve_count);
+  }
 
   for (size_t i = 0; i < in_cloud->points.size(); i++)
   {
-    PointXYZIRTColor new_point;
     auto radius = static_cast<float>(
         sqrt(in_cloud->points[i].x * in_cloud->points[i].x + in_cloud->points[i].y * in_cloud->points[i].y));
 #ifdef USE_ATAN_APPROXIMATION
@@ -118,6 +124,7 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
 #else
         auto theta = static_cast<float>(atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
 #endif  // USE_ATAN_APPROXIMATION
+
     if (theta < 0)
     {
       theta += 360;
@@ -129,15 +136,8 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
 
     auto radial_div = (size_t)floor(theta / radial_divider_angle_);
 
-
-    new_point.point = in_cloud->points[i];
-    new_point.radius = radius;
-    new_point.original_index = i;
-
-    out_organized_points->at(i) = new_point;
-
     // radial divisions
-    out_radial_ordered_clouds->at(radial_div).push_back(new_point);
+    out_radial_ordered_clouds->at(radial_div).emplace_back(in_cloud->points[i], radius, i);
   }  // end for
 
 // order radial points on each division
@@ -341,12 +341,11 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
   // pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_normals_ptr (new pcl::PointCloud<pcl::PointXYZINormal>);
   // GetCloudNormals(current_sensor_cloud_ptr, cloud_with_normals_ptr, 5.0);
 
-  std::shared_ptr<PointCloudXYZIRTColor> organized_points(new PointCloudXYZIRTColor);
   std::shared_ptr<std::vector<PointCloudXYZIRTColor> > radial_ordered_clouds(new std::vector<PointCloudXYZIRTColor>);
 
   radial_dividers_num_ = ceil(360 / radial_divider_angle_);
 
-  ConvertXYZIToRTZColor(filtered_cloud_ptr, organized_points, radial_ordered_clouds);
+  ConvertXYZIToRTZColor(filtered_cloud_ptr, radial_ordered_clouds);
 
   pcl::PointIndices::Ptr ground_indices(new pcl::PointIndices), no_ground_indices(new pcl::PointIndices);
 
