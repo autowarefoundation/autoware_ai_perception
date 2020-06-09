@@ -96,12 +96,11 @@ void RayGroundFilter::publish_cloud(const ros::Publisher& in_publisher,
 /*!
  *
  * @param[in] in_cloud Input Point Cloud to be organized in radial segments
- * @param[out] out_organized_points Custom Point Cloud filled with XYZRTZColor data
  * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
  */
-void RayGroundFilter::ConvertXYZIToRTZColor(
+void RayGroundFilter::ConvertXYZIToRH(
     const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-    const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds)
+    const std::shared_ptr<std::vector<PointCloudRH> >& out_radial_ordered_clouds)
 {
   out_radial_ordered_clouds->resize(radial_dividers_num_);
 
@@ -137,7 +136,7 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
     auto radial_div = (size_t)floor(theta / radial_divider_angle_);
 
     // radial divisions
-    out_radial_ordered_clouds->at(radial_div).emplace_back(in_cloud->points[i], radius, i);
+    out_radial_ordered_clouds->at(radial_div).emplace_back(in_cloud->points[i].z, radius, i);
   }  // end for
 
 // order radial points on each division
@@ -145,7 +144,7 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
   for (size_t i = 0; i < radial_dividers_num_; i++)
   {
     std::sort(out_radial_ordered_clouds->at(i).begin(), out_radial_ordered_clouds->at(i).end(),
-              [](const PointXYZIRTColor& a, const PointXYZIRTColor& b) { return a.radius < b.radius; });  // NOLINT
+              [](const PointRH& a, const PointRH& b) { return a.radius < b.radius; });  // NOLINT
   }
 }
 
@@ -155,7 +154,7 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
  * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
  * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
  */
-void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor>& in_radial_ordered_clouds,
+void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudRH>& in_radial_ordered_clouds,
                                          const pcl::PointIndices::Ptr& out_ground_indices,
                                          const pcl::PointIndices::Ptr& out_no_ground_indices)
 {
@@ -174,7 +173,7 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor
     {
       float points_distance = in_radial_ordered_clouds[i][j].radius - prev_radius;
       float height_threshold = local_slope_ratio * points_distance;
-      float current_height = in_radial_ordered_clouds[i][j].point.z;
+      float current_height = in_radial_ordered_clouds[i][j].height;
       float general_height_threshold = general_slope_ratio * in_radial_ordered_clouds[i][j].radius;
 
       // for points which are very close causing the height threshold to be tiny, set a minimum value
@@ -229,7 +228,7 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor
       }
 
       prev_radius = in_radial_ordered_clouds[i][j].radius;
-      prev_height = in_radial_ordered_clouds[i][j].point.z;
+      prev_height = in_radial_ordered_clouds[i][j].height;
     }
   }
 }
@@ -341,11 +340,11 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
   // pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_normals_ptr (new pcl::PointCloud<pcl::PointXYZINormal>);
   // GetCloudNormals(current_sensor_cloud_ptr, cloud_with_normals_ptr, 5.0);
 
-  std::shared_ptr<std::vector<PointCloudXYZIRTColor> > radial_ordered_clouds(new std::vector<PointCloudXYZIRTColor>);
+  std::shared_ptr<std::vector<PointCloudRH> > radial_ordered_clouds(new std::vector<PointCloudRH>);
 
   radial_dividers_num_ = ceil(360 / radial_divider_angle_);
 
-  ConvertXYZIToRTZColor(filtered_cloud_ptr, radial_ordered_clouds);
+  ConvertXYZIToRH(filtered_cloud_ptr, radial_ordered_clouds);
 
   pcl::PointIndices::Ptr ground_indices(new pcl::PointIndices), no_ground_indices(new pcl::PointIndices);
 

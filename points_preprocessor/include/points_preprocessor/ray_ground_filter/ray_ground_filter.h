@@ -73,19 +73,17 @@ private:
   size_t concentric_dividers_num_;
 
 
-  struct PointXYZIRTColor
+  struct PointRH
   {
-    pcl::PointXYZI point;
+    float height;
     float radius;  // cylindric coords on XY Plane
     size_t original_index;  // index of this point in the source pointcloud
 
-    PointXYZIRTColor(pcl::PointXYZI point, float radius, size_t original_index)
-        : point(point), radius(radius), original_index(original_index)
+    PointRH(float height, float radius, size_t original_index)
+        : height(height), radius(radius), original_index(original_index)
     {}
   };
-
-
-  typedef std::vector<PointXYZIRTColor> PointCloudXYZIRTColor;
+  typedef std::vector<PointRH> PointCloudRH;
 
   void update_config_params(const autoware_config_msgs::ConfigRayGroundFilter::ConstPtr& param);
 
@@ -107,11 +105,10 @@ private:
   /*!
    *
    * @param[in] in_cloud Input Point Cloud to be organized in radial segments
-   * @param[out] out_organized_points Custom Point Cloud filled with XYZRTZColor data
    * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
    */
-  void ConvertXYZIToRTZColor(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-                             const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds);
+  void ConvertXYZIToRH(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
+                       const std::shared_ptr<std::vector<PointCloudRH> >& out_radial_ordered_clouds);
 
   /*!
    * Classifies Points in the PointCoud as Ground and Not Ground
@@ -119,7 +116,7 @@ private:
    * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
    * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
    */
-  void ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor>& in_radial_ordered_clouds,
+  void ClassifyPointCloud(const std::vector<PointCloudRH>& in_radial_ordered_clouds,
                           const pcl::PointIndices::Ptr& out_ground_indices,
                           const pcl::PointIndices::Ptr& out_no_ground_indices);
 
