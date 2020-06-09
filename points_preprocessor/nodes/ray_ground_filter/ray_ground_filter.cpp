@@ -32,6 +32,7 @@
 
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
 #include "points_preprocessor/ray_ground_filter/ray_ground_filter.h"
+#include "points_preprocessor/ray_ground_filter/atan2_utils.h"
 
 void RayGroundFilter::update_config_params(const autoware_config_msgs::ConfigRayGroundFilter::ConstPtr& param)
 {
@@ -112,7 +113,11 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
     PointXYZIRTColor new_point;
     auto radius = static_cast<float>(
         sqrt(in_cloud->points[i].x * in_cloud->points[i].x + in_cloud->points[i].y * in_cloud->points[i].y));
-    auto theta = static_cast<float>(atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
+#ifdef USE_ATAN_APPROXIMATION
+        auto theta = static_cast<float>(fast_atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
+#else
+        auto theta = static_cast<float>(atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
+#endif  // USE_ATAN_APPROXIMATION
     if (theta < 0)
     {
       theta += 360;

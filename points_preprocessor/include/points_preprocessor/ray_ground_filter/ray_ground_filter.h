@@ -41,6 +41,7 @@
 // headers in Autoware Health Checker
 #include <autoware_health_checker/health_checker/health_checker.h>
 
+#define USE_ATAN_APPROXIMATION
 
 class RayGroundFilter
 {

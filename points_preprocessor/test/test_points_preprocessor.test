@@ -11,7 +11,7 @@
 
   <!-- Start the rostest -->
   <test test-name="test_points_preprocessor" pkg="points_preprocessor"
-        type="test_raygroundfilter_clipcloud" name="test_ray_ground_filter">
+        type="test_points_preprocessor" name="test_ray_ground_filter">
   </test>
 
 </launch>
