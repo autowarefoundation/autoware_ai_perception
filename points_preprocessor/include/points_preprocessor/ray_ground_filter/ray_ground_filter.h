@@ -41,12 +41,6 @@
 // headers in Autoware Health Checker
 #include <autoware_health_checker/health_checker/health_checker.h>
 
-#include <opencv2/core/version.hpp>
-#if (CV_MAJOR_VERSION == 3)
-#include "gencolors.cpp"
-#else
-#include <opencv2/contrib/contrib.hpp>
-#endif
 
 class RayGroundFilter
 {
@@ -76,23 +70,11 @@ private:
   size_t radial_dividers_num_;
   size_t concentric_dividers_num_;
 
-  std::vector<cv::Scalar> colors_;
-  const size_t color_num_ = 60;  // different number of color to generate
 
   struct PointXYZIRTColor
   {
     pcl::PointXYZI point;
-
     float radius;  // cylindric coords on XY Plane
-    float theta;   // angle deg on XY plane
-
-    size_t radial_div;      // index of the radial divsion to which this point belongs to
-    size_t concentric_div;  // index of the concentric division to which this points belongs to
-
-    size_t red;    // Red component  [0-255]
-    size_t green;  // Green Component[0-255]
-    size_t blue;   // Blue component [0-255]
-
     size_t original_index;  // index of this point in the source pointcloud
   };
   typedef std::vector<PointXYZIRTColor> PointCloudXYZIRTColor;
@@ -123,7 +105,6 @@ private:
    */
   void ConvertXYZIToRTZColor(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
                              const std::shared_ptr<PointCloudXYZIRTColor>& out_organized_points,
-                             const std::shared_ptr<std::vector<pcl::PointIndices> >& out_radial_divided_indices,
                              const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds);
 
   /*!

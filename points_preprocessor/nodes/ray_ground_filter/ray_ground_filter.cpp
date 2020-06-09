@@ -31,12 +31,6 @@
 #include <velodyne_pointcloud/point_types.h>
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
 
-#include <opencv2/core/version.hpp>
-#if (CV_MAJOR_VERSION == 3)
-#include "gencolors.cpp"
-#else
-#include <opencv2/contrib/contrib.hpp>
-#endif
 
 #include "points_preprocessor/ray_ground_filter/ray_ground_filter.h"
 
@@ -109,12 +103,9 @@ void RayGroundFilter::publish_cloud(const ros::Publisher& in_publisher,
 void RayGroundFilter::ConvertXYZIToRTZColor(
     const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
     const std::shared_ptr<PointCloudXYZIRTColor>& out_organized_points,
-    const std::shared_ptr<std::vector<pcl::PointIndices> >& out_radial_divided_indices,
     const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds)
 {
   out_organized_points->resize(in_cloud->points.size());
-  out_radial_divided_indices->clear();
-  out_radial_divided_indices->resize(radial_dividers_num_);
   out_radial_ordered_clouds->resize(radial_dividers_num_);
 
   for (size_t i = 0; i < in_cloud->points.size(); i++)
@@ -134,23 +125,14 @@ void RayGroundFilter::ConvertXYZIToRTZColor(
 
     auto radial_div = (size_t)floor(theta / radial_divider_angle_);
 
-    auto concentric_div = (size_t)floor(fabs(radius / concentric_divider_distance_));
 
     new_point.point = in_cloud->points[i];
     new_point.radius = radius;
-    new_point.theta = theta;
-    new_point.radial_div = radial_div;
-    new_point.concentric_div = concentric_div;
-    new_point.red = (size_t)colors_[new_point.radial_div % color_num_].val[0];
-    new_point.green = (size_t)colors_[new_point.radial_div % color_num_].val[1];
-    new_point.blue = (size_t)colors_[new_point.radial_div % color_num_].val[2];
     new_point.original_index = i;
 
     out_organized_points->at(i) = new_point;
 
     // radial divisions
-    out_radial_divided_indices->at(radial_div).indices.push_back(i);
-
     out_radial_ordered_clouds->at(radial_div).push_back(new_point);
   }  // end for
 
@@ -354,12 +336,11 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
   // GetCloudNormals(current_sensor_cloud_ptr, cloud_with_normals_ptr, 5.0);
 
   std::shared_ptr<PointCloudXYZIRTColor> organized_points(new PointCloudXYZIRTColor);
-  std::shared_ptr<std::vector<pcl::PointIndices> > radial_division_indices(new std::vector<pcl::PointIndices>);
   std::shared_ptr<std::vector<PointCloudXYZIRTColor> > radial_ordered_clouds(new std::vector<PointCloudXYZIRTColor>);
 
   radial_dividers_num_ = ceil(360 / radial_divider_angle_);
 
-  ConvertXYZIToRTZColor(filtered_cloud_ptr, organized_points, radial_division_indices, radial_ordered_clouds);
+  ConvertXYZIToRTZColor(filtered_cloud_ptr, organized_points, radial_ordered_clouds);
 
   pcl::PointIndices::Ptr ground_indices(new pcl::PointIndices), no_ground_indices(new pcl::PointIndices);
 
@@ -417,11 +398,6 @@ void RayGroundFilter::Run()
   node_handle_.param("reclass_distance_threshold", reclass_distance_threshold_, 0.2);  // 0.5 meters default
   ROS_INFO("reclass_distance_threshold[meters]: %f", reclass_distance_threshold_);
 
-#if (CV_MAJOR_VERSION == 3)
-  generateColors(colors_, color_num_);
-#else
-  cv::generateColors(colors_, color_num_);
-#endif
 
   radial_dividers_num_ = ceil(360 / radial_divider_angle_);
   ROS_INFO("Radial Divisions: %d", (int)radial_dividers_num_);
