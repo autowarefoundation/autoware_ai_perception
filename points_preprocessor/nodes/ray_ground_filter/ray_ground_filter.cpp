@@ -21,13 +21,8 @@
 #include <string>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <pcl_ros/point_cloud.h>
+#include <sensor_msgs/PointField.h>
 #include <pcl_ros/transforms.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/filters/extract_indices.h>
 #include <velodyne_pointcloud/point_types.h>
 
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
@@ -44,8 +39,17 @@ void RayGroundFilter::update_config_params(const autoware_config_msgs::ConfigRay
   clipping_height_ = param->clipping_height;
   min_point_distance_ = param->min_point_distance;
   reclass_distance_threshold_ = param->reclass_distance_threshold;
+  radial_dividers_num_ = ceil(360.0 / radial_divider_angle_);
 }
 
+/*!
+ * Output transformed PointCloud from in_cloud_ptr->header.frame_id to in_target_frame
+ * @param in_target_frame Coordinate system to perform transform
+ * @param in_cloud_ptr PointCloud to perform transform
+ * @param out_cloud_ptr Resulting transformed PointCloud
+ * @retval true transform successed
+ * @retval false transform faild
+ */
 bool RayGroundFilter::TransformPointCloud(const std::string& in_target_frame,
                                           const sensor_msgs::PointCloud2::ConstPtr& in_cloud_ptr,
                                           const sensor_msgs::PointCloud2::Ptr& out_cloud_ptr)
@@ -74,95 +78,82 @@ bool RayGroundFilter::TransformPointCloud(const std::string& in_target_frame,
   return true;
 }
 
-void RayGroundFilter::publish_cloud(const ros::Publisher& in_publisher,
-                                    const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_to_publish_ptr,
-                                    const std_msgs::Header& in_header)
+/*!
+ * Extract the points pointed by in_selector from in_radial_ordered_clouds to copy them in out_no_ground_ptrs
+ * @param pub The ROS publisher on which to output the point cloud
+ * @param in_sensor_cloud The input point cloud from which to select the points to publish
+ * @param in_selector The pointers to the input cloud's binary blob. No checks are done so be carefull
+ */
+void RayGroundFilter::publish(ros::Publisher pub,
+                               const sensor_msgs::PointCloud2ConstPtr in_sensor_cloud,
+                               const std::vector<void*>& in_selector)
 {
-  sensor_msgs::PointCloud2::Ptr cloud_msg_ptr(new sensor_msgs::PointCloud2);
-  sensor_msgs::PointCloud2::Ptr trans_cloud_msg_ptr(new sensor_msgs::PointCloud2);
-  pcl::toROSMsg(*in_cloud_to_publish_ptr, *cloud_msg_ptr);
-  cloud_msg_ptr->header.frame_id = base_frame_;
-  cloud_msg_ptr->header.stamp = in_header.stamp;
-  const bool succeeded = TransformPointCloud(in_header.frame_id, cloud_msg_ptr, trans_cloud_msg_ptr);
-  if (!succeeded)
-  {
-    ROS_ERROR_STREAM_THROTTLE(10, "Failed transform from " << cloud_msg_ptr->header.frame_id << " to "
-                                                           << in_header.frame_id);
-    return;
-  }
-  in_publisher.publish(*trans_cloud_msg_ptr);
+  sensor_msgs::PointCloud2::Ptr output_cloud(new sensor_msgs::PointCloud2);
+  filterROSMsg(in_sensor_cloud, in_selector, output_cloud);
+  pub.publish(*output_cloud);
 }
 
 /*!
- *
- * @param[in] in_cloud Input Point Cloud to be organized in radial segments
- * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
+ * Extract the points pointed by in_selector from in_radial_ordered_clouds to copy them in out_no_ground_ptrs
+ * @param in_origin_cloud The original cloud from which we want to copy the points
+ * @param in_selector The pointers to the input cloud's binary blob. No checks are done so be carefull
+ * @param out_filtered_msg Returns a cloud comprised of the selected points from the origin cloud
  */
-void RayGroundFilter::ConvertXYZIToRH(
-    const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-    const std::shared_ptr<std::vector<PointCloudRH> >& out_radial_ordered_clouds)
+void RayGroundFilter::filterROSMsg(const sensor_msgs::PointCloud2ConstPtr in_origin_cloud,
+                   const std::vector<void*>& in_selector,
+                   const sensor_msgs::PointCloud2::Ptr out_filtered_msg)
 {
-  out_radial_ordered_clouds->resize(radial_dividers_num_);
+  size_t point_size = in_origin_cloud->row_step/in_origin_cloud->width;  // in Byte
 
-  const int mean_ray_count = in_cloud->points.size()/radial_dividers_num_;
-  // In theory reserving more than the average memory would reduce even more the number of realloc
-  // but it would also make the reserving takes longer. One or two times the average are pretty
-  // much identical in term of speedup. Three seems a bit worse.
-  const int reserve_count = mean_ray_count;
-  for (auto it = out_radial_ordered_clouds->begin(); it != out_radial_ordered_clouds->end(); it++)
+  // TODO(yoan picchi) I fear this may do a lot of cache miss because it is sorted in the radius
+  // and no longer sorted in the original pointer. One thing to try is that, given
+  // that we know the value possibles, we can make a rather large vector and insert
+  // all the point in, then move things around to remove the "blank" space. This
+  // would be a linear sort to allow cache prediction to work better. To be tested.
+
+  size_t data_size = point_size * in_selector.size();
+  out_filtered_msg->data.resize(data_size);  // TODO(yoan picchi) a fair amount of time (5-10%) is wasted on this resize
+
+  size_t offset = 0;
+  for ( auto it = in_selector.cbegin(); it != in_selector.cend(); it++ )
   {
-    it->reserve(reserve_count);
+    memcpy(out_filtered_msg->data.data()+offset, *it, point_size);
+    offset += point_size;
   }
 
-  for (size_t i = 0; i < in_cloud->points.size(); i++)
-  {
-    auto radius = static_cast<float>(
-        sqrt(in_cloud->points[i].x * in_cloud->points[i].x + in_cloud->points[i].y * in_cloud->points[i].y));
-#ifdef USE_ATAN_APPROXIMATION
-        auto theta = static_cast<float>(fast_atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
-#else
-        auto theta = static_cast<float>(atan2(in_cloud->points[i].y, in_cloud->points[i].x) * 180 / M_PI);
-#endif  // USE_ATAN_APPROXIMATION
+  out_filtered_msg->width  = (uint32_t) in_selector.size();
+  out_filtered_msg->height = 1;
 
-    if (theta < 0)
-    {
-      theta += 360;
-    }
-    if (theta >= 360)
-    {
-      theta -= 360;
-    }
-
-    auto radial_div = (size_t)floor(theta / radial_divider_angle_);
-
-    // radial divisions
-    out_radial_ordered_clouds->at(radial_div).emplace_back(in_cloud->points[i].z, radius, i);
-  }  // end for
-
-// order radial points on each division
-#pragma omp for
-  for (size_t i = 0; i < radial_dividers_num_; i++)
-  {
-    std::sort(out_radial_ordered_clouds->at(i).begin(), out_radial_ordered_clouds->at(i).end(),
-              [](const PointRH& a, const PointRH& b) { return a.radius < b.radius; });  // NOLINT
-  }
+  out_filtered_msg->fields            = in_origin_cloud->fields;
+  out_filtered_msg->header.frame_id   = base_frame_;
+  out_filtered_msg->header.stamp      = in_origin_cloud->header.stamp;
+  out_filtered_msg->point_step        = in_origin_cloud->point_step;
+  out_filtered_msg->row_step          = point_size * in_selector.size();
+  out_filtered_msg->is_dense          = in_origin_cloud->is_dense
+                                        && in_origin_cloud->data.size() == in_selector.size();
 }
 
 /*!
  * Classifies Points in the PointCoud as Ground and Not Ground
  * @param in_radial_ordered_clouds Vector of an Ordered PointsCloud ordered by radial distance from the origin
- * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
- * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
+ * @param in_point_count Total number of lidar point. This is used to reserve the output's vector memory
+ * @param out_ground_ptrs Returns the original adress of the points classified as ground in the original PointCloud
+ * @param out_no_ground_ptrs Returns the original adress of the points classified as not ground in the original PointCloud
  */
 void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudRH>& in_radial_ordered_clouds,
-                                         const pcl::PointIndices::Ptr& out_ground_indices,
-                                         const pcl::PointIndices::Ptr& out_no_ground_indices)
+                                         const size_t in_point_count,
+                                         std::vector<void*>* out_ground_ptrs,
+                                         std::vector<void*>* out_no_ground_ptrs)
 {
-  out_ground_indices->indices.clear();
-  out_no_ground_indices->indices.clear();
+  out_ground_ptrs->clear();
+  out_no_ground_ptrs->clear();
+
+  double expected_ground_no_ground_ratio = 0.1;
+  out_ground_ptrs->reserve(in_point_count * expected_ground_no_ground_ratio);
+  out_no_ground_ptrs->reserve(in_point_count);
+
   const float local_slope_ratio = tan(DEG2RAD(local_max_slope_));
   const float general_slope_ratio = tan(DEG2RAD(general_max_slope_));
-#pragma omp for
   for (size_t i = 0; i < in_radial_ordered_clouds.size(); i++)  // sweep through each radial division
   {
     float prev_radius = 0.f;
@@ -218,12 +209,12 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudRH>& in_rad
 
       if (current_ground)
       {
-        out_ground_indices->indices.push_back(in_radial_ordered_clouds[i][j].original_index);
+        out_ground_ptrs->push_back(in_radial_ordered_clouds[i][j].original_data_pointer);
         prev_ground = true;
       }
       else
       {
-        out_no_ground_indices->indices.push_back(in_radial_ordered_clouds[i][j].original_index);
+        out_no_ground_ptrs->push_back(in_radial_ordered_clouds[i][j].original_data_pointer);
         prev_ground = false;
       }
 
@@ -233,81 +224,138 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudRH>& in_rad
   }
 }
 
+float ReverseFloat(float inFloat)  // Swap endianness
+{
+  float retVal;
+  char *floatToConvert = reinterpret_cast<char*>(& inFloat);
+  char *returnFloat = reinterpret_cast<char*>(& retVal);
+
+  // swap the bytes into a temporary buffer
+  returnFloat[0] = floatToConvert[3];
+  returnFloat[1] = floatToConvert[2];
+  returnFloat[2] = floatToConvert[1];
+  returnFloat[3] = floatToConvert[0];
+
+  return retVal;
+}
+
+bool is_big_endian(void)
+{
+  union
+  {
+    uint32_t i;
+    char c[4];
+  } bint = {0x01020304};
+
+  return bint.c[0] == 1;
+}
+
 /*!
- * Removes the points higher than a threshold
- * @param in_cloud_ptr PointCloud to perform Clipping
+ * Convert the sensor_msgs::PointCloud2 into PointCloudRH and filter out the points too high or too close
+ * @param in_transformed_cloud Input Point Cloud to be organized in radial segments
  * @param in_clip_height Maximum allowed height in the cloud
- * @param out_clipped_cloud_ptr Resultung PointCloud with the points removed
- */
-void RayGroundFilter::ClipCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, const double in_clip_height,
-                                pcl::PointCloud<pcl::PointXYZI>::Ptr out_clipped_cloud_ptr)
-{
-  pcl::ExtractIndices<pcl::PointXYZI> extractor;
-  extractor.setInputCloud(in_cloud_ptr);
-  pcl::PointIndices indices;
-
-#pragma omp for
-  for (size_t i = 0; i < in_cloud_ptr->points.size(); i++)
-  {
-    if (in_cloud_ptr->points[i].z > in_clip_height)
-    {
-      indices.indices.push_back(i);
-    }
-  }
-  extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  extractor.setNegative(true);  // true removes the indices, false leaves only the indices
-  extractor.filter(*out_clipped_cloud_ptr);
-}
-
-/*!
- * Returns the resulting complementary PointCloud, one with the points kept and the other removed as indicated
- * in the indices
- * @param in_cloud_ptr Input PointCloud to which the extraction will be performed
- * @param in_indices Indices of the points to be both removed and kept
- * @param out_only_indices_cloud_ptr Resulting PointCloud with the indices kept
- * @param out_removed_indices_cloud_ptr Resulting PointCloud with the indices removed
- */
-void RayGroundFilter::ExtractPointsIndices(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr,
-                                           const pcl::PointIndices& in_indices,
-                                           pcl::PointCloud<pcl::PointXYZI>::Ptr out_only_indices_cloud_ptr,
-                                           pcl::PointCloud<pcl::PointXYZI>::Ptr out_removed_indices_cloud_ptr)
-{
-  pcl::ExtractIndices<pcl::PointXYZI> extract_ground;
-  extract_ground.setInputCloud(in_cloud_ptr);
-  extract_ground.setIndices(boost::make_shared<pcl::PointIndices>(in_indices));
-
-  extract_ground.setNegative(false);  // true removes the indices, false leaves only the indices
-  extract_ground.filter(*out_only_indices_cloud_ptr);
-
-  extract_ground.setNegative(true);  // true removes the indices, false leaves only the indices
-  extract_ground.filter(*out_removed_indices_cloud_ptr);
-}
-
-/*!
- * Removes points up to a certain distance in the XY Plane
- * @param in_cloud_ptr Input PointCloud
  * @param in_min_distance Minimum valid distance, points closer than this will be removed.
- * @param out_filtered_cloud_ptr Resulting PointCloud with the invalid points removed.
+ * @param out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
  */
-void RayGroundFilter::RemovePointsUpTo(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, double in_min_distance,
-                                       pcl::PointCloud<pcl::PointXYZI>::Ptr out_filtered_cloud_ptr)
+void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_transformed_cloud,
+                      const double in_clip_height,
+                      double in_min_distance,
+                      std::vector<PointCloudRH>* out_radial_ordered_clouds)
 {
-  pcl::ExtractIndices<pcl::PointXYZI> extractor;
-  extractor.setInputCloud(in_cloud_ptr);
-  pcl::PointIndices indices;
+  // --- Clarify some of the values used to access the binary blob
+  size_t point_size = in_transformed_cloud->row_step/in_transformed_cloud->width;  // in Byte
+  size_t cloud_count = in_transformed_cloud->width*in_transformed_cloud->height;
 
-#pragma omp for
-  for (size_t i = 0; i < in_cloud_ptr->points.size(); i++)
+  const uint offset_not_set = ~0;
+  uint x_offset = offset_not_set;  // in Byte from the point's start
+  uint y_offset = offset_not_set;  // in Byte from the point's start
+  uint z_offset = offset_not_set;  // in Byte from the point's start
+
+  for ( uint i = 0; i < in_transformed_cloud->fields.size(); i++ )
   {
-    if (sqrt(in_cloud_ptr->points[i].x * in_cloud_ptr->points[i].x +
-             in_cloud_ptr->points[i].y * in_cloud_ptr->points[i].y) < in_min_distance)
+    sensor_msgs::PointField field = in_transformed_cloud->fields[i];
+    if ("x" == field.name)
     {
-      indices.indices.push_back(i);
+      x_offset = field.offset;
+    }
+    else if ("y" == field.name)
+    {
+      y_offset = field.offset;
+    }
+    else if ("z" == field.name)
+    {
+      z_offset = field.offset;
     }
   }
-  extractor.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  extractor.setNegative(true);  // true removes the indices, false leaves only the indices
-  extractor.filter(*out_filtered_cloud_ptr);
+
+  if (offset_not_set == x_offset || offset_not_set == y_offset || offset_not_set == z_offset)
+  {
+    ROS_ERROR_STREAM_THROTTLE(10, "Failed to decode the pointcloud message : bad coordinate field name");
+    return;
+  }
+  // ---
+
+  out_radial_ordered_clouds->resize(radial_dividers_num_);
+
+  const int mean_ray_count = cloud_count/radial_dividers_num_;
+  // In theory reserving more than the average memory would reduce even more the number of realloc
+  // but it would also make the reserving takes longer. One or two times the average are pretty
+  // much identical in term of speedup. Three seems a bit worse.
+  const int reserve_count = mean_ray_count;
+  for (auto it = out_radial_ordered_clouds->begin(); it != out_radial_ordered_clouds->end(); it++)
+  {
+    it->reserve(reserve_count);
+  }
+
+  for ( size_t i = 0; i < cloud_count; i++ )
+  {
+    // --- access the binary blob fields
+    uint8_t* point_start_ptr = reinterpret_cast<uint8_t*>(in_transformed_cloud->data.data()) + (i*point_size);
+    float x = *(reinterpret_cast<float*>(point_start_ptr+x_offset));
+    float y = *(reinterpret_cast<float*>(point_start_ptr+y_offset));
+    float z = *(reinterpret_cast<float*>(point_start_ptr+z_offset));
+    if (is_big_endian() != in_transformed_cloud->is_bigendian)
+    {
+      x = ReverseFloat(x);
+      y = ReverseFloat(y);
+      z = ReverseFloat(z);
+    }
+    // ---
+
+    if (z > in_clip_height)
+    {
+      continue;
+    }
+    auto radius = static_cast<float>(sqrt(x*x + y*y));
+    if (radius < in_min_distance)
+    {
+      continue;
+    }
+#ifdef USE_ATAN_APPROXIMATION
+    auto theta = static_cast<float>(fast_atan2(y, x) * 180 / M_PI);
+#else
+    auto theta = static_cast<float>(atan2(y, x) * 180 / M_PI);
+#endif  // USE_ATAN_APPROXIMATION
+    if (theta < 0)
+    {
+      theta += 360;
+    }
+    else if (theta >= 360)
+    {
+      theta -= 360;
+    }
+
+    auto radial_div = (size_t)floor(theta / radial_divider_angle_);
+    out_radial_ordered_clouds->at(radial_div).emplace_back(z, radius, point_start_ptr);
+  }  // end for
+
+  // order radial points on each division
+#pragma omp for
+  for (size_t i = 0; i < radial_dividers_num_; i++)
+  {
+    std::sort(out_radial_ordered_clouds->at(i).begin(), out_radial_ordered_clouds->at(i).end(),
+              [](const PointRH& a, const PointRH& b) { return a.radius < b.radius; });  // NOLINT
+  }
 }
 
 void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_sensor_cloud)
@@ -324,39 +372,15 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
     return;
   }
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr current_sensor_cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::fromROSMsg(*trans_sensor_cloud, *current_sensor_cloud_ptr);
+  std::vector<PointCloudRH> radial_ordered_clouds;
+  ConvertAndTrim(trans_sensor_cloud, clipping_height_, min_point_distance_, &radial_ordered_clouds);
+  const size_t point_count = in_sensor_cloud->width*in_sensor_cloud->height;
 
-  pcl::PointCloud<pcl::PointXYZI>::Ptr clipped_cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
+  std::vector<void*> ground_ptrs, no_ground_ptrs;
+  ClassifyPointCloud(radial_ordered_clouds, point_count, &ground_ptrs, &no_ground_ptrs);
 
-  // remove points above certain point
-  ClipCloud(current_sensor_cloud_ptr, clipping_height_, clipped_cloud_ptr);
-
-  // remove closer points than a threshold
-  pcl::PointCloud<pcl::PointXYZI>::Ptr filtered_cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
-  RemovePointsUpTo(clipped_cloud_ptr, min_point_distance_, filtered_cloud_ptr);
-
-  // GetCloud Normals
-  // pcl::PointCloud<pcl::PointXYZINormal>::Ptr cloud_with_normals_ptr (new pcl::PointCloud<pcl::PointXYZINormal>);
-  // GetCloudNormals(current_sensor_cloud_ptr, cloud_with_normals_ptr, 5.0);
-
-  std::shared_ptr<std::vector<PointCloudRH> > radial_ordered_clouds(new std::vector<PointCloudRH>);
-
-  radial_dividers_num_ = ceil(360 / radial_divider_angle_);
-
-  ConvertXYZIToRH(filtered_cloud_ptr, radial_ordered_clouds);
-
-  pcl::PointIndices::Ptr ground_indices(new pcl::PointIndices), no_ground_indices(new pcl::PointIndices);
-
-  ClassifyPointCloud(*radial_ordered_clouds, ground_indices, no_ground_indices);
-
-  pcl::PointCloud<pcl::PointXYZI>::Ptr ground_cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
-  pcl::PointCloud<pcl::PointXYZI>::Ptr no_ground_cloud_ptr(new pcl::PointCloud<pcl::PointXYZI>);
-
-  ExtractPointsIndices(filtered_cloud_ptr, *ground_indices, ground_cloud_ptr, no_ground_cloud_ptr);
-
-  publish_cloud(ground_points_pub_, ground_cloud_ptr, in_sensor_cloud->header);
-  publish_cloud(groundless_points_pub_, no_ground_cloud_ptr, in_sensor_cloud->header);
+  publish(ground_points_pub_, in_sensor_cloud, ground_ptrs);
+  publish(groundless_points_pub_, in_sensor_cloud, no_ground_ptrs);
 }
 
 RayGroundFilter::RayGroundFilter() : node_handle_("~"), tf_listener_(tf_buffer_)
@@ -403,7 +427,7 @@ void RayGroundFilter::Run()
   ROS_INFO("reclass_distance_threshold[meters]: %f", reclass_distance_threshold_);
 
 
-  radial_dividers_num_ = ceil(360 / radial_divider_angle_);
+  radial_dividers_num_ = ceil(360.0 / radial_divider_angle_);
   ROS_INFO("Radial Divisions: %d", (int)radial_dividers_num_);
 
   std::string no_ground_topic, ground_topic;

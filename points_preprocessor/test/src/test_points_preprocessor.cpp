@@ -16,7 +16,6 @@
 
 #include "gtest/gtest.h"
 
-#include "test_ray_groundfilter.h"
 #include "test_fast_atan2.h"
 
 int32_t main(int32_t argc, char ** argv)

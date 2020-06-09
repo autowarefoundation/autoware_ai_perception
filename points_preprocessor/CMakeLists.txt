@@ -95,12 +95,10 @@ endif()
 
 target_include_directories(ray_ground_filter_lib PRIVATE
   ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
 
 target_link_libraries(ray_ground_filter_lib
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Qt5Core_LIBRARIES}
 )
