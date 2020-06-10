@@ -410,12 +410,10 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
   publish(groundless_points_pub_, in_sensor_cloud, no_ground_ptrs);
 }
 
-RayGroundFilter::RayGroundFilter() : node_handle_("~"), tf_listener_(tf_buffer_)
+RayGroundFilter::RayGroundFilter() : nh_(), pnh_("~"), tf_listener_(tf_buffer_)
 
 {
-  ros::NodeHandle nh;
-  ros::NodeHandle pnh("~");
-  health_checker_ptr_ = std::make_shared<autoware_health_checker::HealthChecker>(nh, pnh);
+  health_checker_ptr_ = std::make_shared<autoware_health_checker::HealthChecker>(nh_, pnh_);
   health_checker_ptr_->ENABLE();
 }
 
@@ -428,29 +426,29 @@ void RayGroundFilter::Run()
   // VLP-16  |     0.1-0.4    |     2.0      |  -15.0<=x<=15.0   (30    / 0.52)
   // VLP-16HD|     0.1-0.4    |     1.33     |  -10.0<=x<=10.0   (20    / 0.35)
   ROS_INFO("Initializing Ground Filter, please wait...");
-  node_handle_.param<std::string>("input_point_topic", input_point_topic_, "/points_raw");
+  pnh_.param<std::string>("input_point_topic", input_point_topic_, "points_raw");
   ROS_INFO("Input point_topic: %s", input_point_topic_.c_str());
 
-  node_handle_.param<std::string>("base_frame", base_frame_, "base_link");
+  pnh_.param<std::string>("base_frame", base_frame_, "base_link");
   ROS_INFO("base_frame: %s", base_frame_.c_str());
 
-  node_handle_.param("general_max_slope", general_max_slope_, 3.0);
+  pnh_.param("general_max_slope", general_max_slope_, 3.0);
   ROS_INFO("general_max_slope[deg]: %f", general_max_slope_);
 
-  node_handle_.param("local_max_slope", local_max_slope_, 5.0);
+  pnh_.param("local_max_slope", local_max_slope_, 5.0);
   ROS_INFO("local_max_slope[deg]: %f", local_max_slope_);
 
-  node_handle_.param("radial_divider_angle", radial_divider_angle_, 0.1);  // 0.1 degree default
+  pnh_.param("radial_divider_angle", radial_divider_angle_, 0.1);  // 0.1 degree default
   ROS_INFO("radial_divider_angle[deg]: %f", radial_divider_angle_);
-  node_handle_.param("concentric_divider_distance", concentric_divider_distance_, 0.0);  // 0.0 meters default
+  pnh_.param("concentric_divider_distance", concentric_divider_distance_, 0.0);  // 0.0 meters default
   ROS_INFO("concentric_divider_distance[meters]: %f", concentric_divider_distance_);
-  node_handle_.param("min_height_threshold", min_height_threshold_, 0.05);  // 0.05 meters default
+  pnh_.param("min_height_threshold", min_height_threshold_, 0.05);  // 0.05 meters default
   ROS_INFO("min_height_threshold[meters]: %f", min_height_threshold_);
-  node_handle_.param("clipping_height", clipping_height_, 2.0);  // 2.0 meters default above the car
+  pnh_.param("clipping_height", clipping_height_, 2.0);  // 2.0 meters default above the car
   ROS_INFO("clipping_height[meters]: %f", clipping_height_);
-  node_handle_.param("min_point_distance", min_point_distance_, 1.85);  // 1.85 meters default
+  pnh_.param("min_point_distance", min_point_distance_, 1.85);  // 1.85 meters default
   ROS_INFO("min_point_distance[meters]: %f", min_point_distance_);
-  node_handle_.param("reclass_distance_threshold", reclass_distance_threshold_, 0.2);  // 0.2 meters default
+  pnh_.param("reclass_distance_threshold", reclass_distance_threshold_, 0.2);  // 0.2 meters default
   ROS_INFO("reclass_distance_threshold[meters]: %f", reclass_distance_threshold_);
 
 
@@ -458,19 +456,19 @@ void RayGroundFilter::Run()
   ROS_INFO("Radial Divisions: %d", (int)radial_dividers_num_);
 
   std::string no_ground_topic, ground_topic;
-  node_handle_.param<std::string>("no_ground_point_topic", no_ground_topic, "/points_no_ground");
+  pnh_.param<std::string>("no_ground_point_topic", no_ground_topic, "points_no_ground");
   ROS_INFO("No Ground Output Point Cloud no_ground_point_topic: %s", no_ground_topic.c_str());
-  node_handle_.param<std::string>("ground_point_topic", ground_topic, "/points_ground");
+  pnh_.param<std::string>("ground_point_topic", ground_topic, "points_ground");
   ROS_INFO("Only Ground Output Point Cloud ground_topic: %s", ground_topic.c_str());
 
   ROS_INFO("Subscribing to... %s", input_point_topic_.c_str());
-  points_node_sub_ = node_handle_.subscribe(input_point_topic_, 1, &RayGroundFilter::CloudCallback, this);
+  points_node_sub_ = nh_.subscribe(input_point_topic_, 1, &RayGroundFilter::CloudCallback, this);
 
   config_node_sub_ =
-      node_handle_.subscribe("/config/ray_ground_filter", 1, &RayGroundFilter::update_config_params, this);
+      nh_.subscribe("config/ray_ground_filter", 1, &RayGroundFilter::update_config_params, this);
 
-  groundless_points_pub_ = node_handle_.advertise<sensor_msgs::PointCloud2>(no_ground_topic, 2);
-  ground_points_pub_ = node_handle_.advertise<sensor_msgs::PointCloud2>(ground_topic, 2);
+  groundless_points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(no_ground_topic, 2);
+  ground_points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>(ground_topic, 2);
 
   ROS_INFO("Ready");
 

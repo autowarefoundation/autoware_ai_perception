@@ -42,7 +42,8 @@ class RayGroundFilter
 {
 private:
   std::shared_ptr<autoware_health_checker::HealthChecker> health_checker_ptr_;
-  ros::NodeHandle node_handle_;
+  ros::NodeHandle nh_;
+  ros::NodeHandle pnh_;
   ros::Subscriber points_node_sub_;
   ros::Subscriber config_node_sub_;
   ros::Publisher groundless_points_pub_;
