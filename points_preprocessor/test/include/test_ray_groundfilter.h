@@ -83,10 +83,10 @@ TEST(RayGroundFilter, callback)
   EXPECT_TRUE(equals(*trans_sensor_cloud, *expected_trans_sensor_cloud)) << "we don't get the expected transform";
 
   std::vector<RayGroundFilter::PointCloudRH> radial_ordered_clouds;
-  rgfilter.ConvertAndTrim(expected_trans_sensor_cloud, rgfilter.clipping_height_, rgfilter.min_point_distance_, &radial_ordered_clouds);
+  std::vector<void*> ground_ptrs, no_ground_ptrs;
+  rgfilter.ConvertAndTrim(expected_trans_sensor_cloud, rgfilter.clipping_height_, rgfilter.min_point_distance_, &radial_ordered_clouds, &no_ground_ptrs);
   const size_t point_count = input_cloud->width*input_cloud->height;
 
-  std::vector<void*> ground_ptrs, no_ground_ptrs;
   rgfilter.ClassifyPointCloud(radial_ordered_clouds, point_count, &ground_ptrs, &no_ground_ptrs);
   EXPECT_LE(static_cast<uint>(std::abs(static_cast<int>(ground_ptrs.size())-expected_ground_points)), error_allowed)
     << "Wrong number of ground point";

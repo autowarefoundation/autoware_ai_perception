@@ -145,9 +145,6 @@ void RayGroundFilter::ClassifyPointCloud(const std::vector<PointCloudRH>& in_rad
                                          std::vector<void*>* out_ground_ptrs,
                                          std::vector<void*>* out_no_ground_ptrs)
 {
-  out_ground_ptrs->clear();
-  out_no_ground_ptrs->clear();
-
   double expected_ground_no_ground_ratio = 0.1;
   out_ground_ptrs->reserve(in_point_count * expected_ground_no_ground_ratio);
   out_no_ground_ptrs->reserve(in_point_count);
@@ -256,11 +253,13 @@ bool is_big_endian(void)
  * @param in_clip_height Maximum allowed height in the cloud
  * @param in_min_distance Minimum valid distance, points closer than this will be removed.
  * @param out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
+ * @param out_no_ground_ptrs Returns the pointers to the points filtered out as no ground
  */
 void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_transformed_cloud,
                       const double in_clip_height,
                       double in_min_distance,
-                      std::vector<PointCloudRH>* out_radial_ordered_clouds)
+                      std::vector<PointCloudRH>* out_radial_ordered_clouds,
+                      std::vector<void*>* out_no_ground_ptrs)
 {
   // --- Clarify some of the values used to access the binary blob
   size_t point_size = in_transformed_cloud->row_step/in_transformed_cloud->width;  // in Byte
@@ -331,11 +330,13 @@ void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_tran
 
     if (z > in_clip_height)
     {
+      out_no_ground_ptrs->push_back(point_start_ptr);
       continue;
     }
     auto radius = static_cast<float>(sqrt(x*x + y*y));
     if (radius < in_min_distance)
     {
+      out_no_ground_ptrs->push_back(point_start_ptr);
       continue;
     }
 #ifdef USE_ATAN_APPROXIMATION
@@ -393,10 +394,10 @@ void RayGroundFilter::CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_s
   }
 
   std::vector<PointCloudRH> radial_ordered_clouds;
-  ConvertAndTrim(trans_sensor_cloud, clipping_height_, min_point_distance_, &radial_ordered_clouds);
+  std::vector<void*> ground_ptrs, no_ground_ptrs;
+  ConvertAndTrim(trans_sensor_cloud, clipping_height_, min_point_distance_, &radial_ordered_clouds, &no_ground_ptrs);
   const size_t point_count = in_sensor_cloud->width*in_sensor_cloud->height;
 
-  std::vector<void*> ground_ptrs, no_ground_ptrs;
   ClassifyPointCloud(radial_ordered_clouds, point_count, &ground_ptrs, &no_ground_ptrs);
 
   publish(ground_points_pub_, in_sensor_cloud, ground_ptrs);

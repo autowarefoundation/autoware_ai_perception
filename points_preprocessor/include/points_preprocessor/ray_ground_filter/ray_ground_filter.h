@@ -130,11 +130,13 @@ private:
    * @param in_clip_height Maximum allowed height in the cloud
    * @param in_min_distance Minimum valid distance, points closer than this will be removed.
    * @param out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
+   * @param out_no_ground_ptrs Returns the pointers to the points filtered out as no ground
    */
   void ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_transformed_cloud,
                       const double in_clip_height,
                       double in_min_distance,
-                      std::vector<PointCloudRH>* out_radial_ordered_clouds);
+                      std::vector<PointCloudRH>* out_radial_ordered_clouds,
+                      std::vector<void*>* out_no_ground_ptrs);
 
   void CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_sensor_cloud);
 
