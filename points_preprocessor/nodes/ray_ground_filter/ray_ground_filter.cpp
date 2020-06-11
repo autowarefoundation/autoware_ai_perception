@@ -370,7 +370,6 @@ void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_tran
     // then the radius are equals. We add a secondary condition to keep the sort stable
     return a.original_data_pointer < b.original_data_pointer;
   };
-#pragma omp for
   for (size_t i = 0; i < radial_dividers_num_; i++)
   {
     std::sort(out_radial_ordered_clouds->at(i).begin(),
