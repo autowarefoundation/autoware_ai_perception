@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2017-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -271,6 +271,13 @@ void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_tran
   uint y_offset = offset_not_set;  // in Byte from the point's start
   uint z_offset = offset_not_set;  // in Byte from the point's start
 
+  if (in_transformed_cloud->fields.size() < 3)
+  {
+    ROS_ERROR_STREAM_THROTTLE(10, "Failed to decode the pointcloud message : not enough fields found : "
+        << in_transformed_cloud->fields.size() << " (needs at least 3 : x,y,z)");
+    return;
+  }
+
   for ( uint i = 0; i < in_transformed_cloud->fields.size(); i++ )
   {
     sensor_msgs::PointField field = in_transformed_cloud->fields[i];
@@ -350,11 +357,25 @@ void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_tran
   }  // end for
 
   // order radial points on each division
+  auto strick_weak_radius_ordering = [](const PointRH& a, const PointRH& b)
+  {
+    if (a.radius < b.radius)
+    {
+      return true;
+    }
+    if (a.radius > b.radius)
+    {
+      return false;
+    }
+    // then the radius are equals. We add a secondary condition to keep the sort stable
+    return a.original_data_pointer < b.original_data_pointer;
+  };
 #pragma omp for
   for (size_t i = 0; i < radial_dividers_num_; i++)
   {
-    std::sort(out_radial_ordered_clouds->at(i).begin(), out_radial_ordered_clouds->at(i).end(),
-              [](const PointRH& a, const PointRH& b) { return a.radius < b.radius; });  // NOLINT
+    std::sort(out_radial_ordered_clouds->at(i).begin(),
+              out_radial_ordered_clouds->at(i).end(),
+              strick_weak_radius_ordering);
   }
 }
 

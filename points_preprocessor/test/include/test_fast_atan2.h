@@ -1,5 +1,5 @@
 /*
- * Copyright 2015-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,18 @@ TEST(RayGroundFilter, fast_atan2)
   double max_error_expected = 0.005;  // radian
 
   double step_size = PI/nb_of_sample;
-  for( double d = -PI_2+epsilon_rad; d < PI_2-epsilon_rad; d += step_size)
+  for( double angle = -PI_2+epsilon_rad; angle < PI_2-epsilon_rad; angle += step_size)
   {
-      double y_value = tan(d);
+      double y_value = tan(angle);
       double reference_value = atan2(y_value, 1);
       double tested_value = fast_atan2(y_value, 1);
-      ASSERT_LT(fabsf(reference_value-tested_value), max_error_expected);
+      ASSERT_LT(fabsf(reference_value-tested_value), max_error_expected) \
+          << "atan2 approximation's error is above the expected error : " \
+          << fabsf(reference_value-tested_value);
       reference_value = atan2(y_value, -1);
       tested_value = fast_atan2(y_value, -1);
-      ASSERT_LT(fabsf(reference_value-tested_value), max_error_expected);
+      ASSERT_LT(fabsf(reference_value-tested_value), max_error_expected) \
+          << "atan2 approximation's error is above the expected error : " \
+          << fabsf(reference_value-tested_value);
   }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2017-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -138,7 +138,7 @@ private:
 
   void CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_sensor_cloud);
 
-  friend class RayGroundFilter_clipCloud_Test;
+  friend class RayGroundFilter_callback_Test;
 
 public:
   RayGroundFilter();
