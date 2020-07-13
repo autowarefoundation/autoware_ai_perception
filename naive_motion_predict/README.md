@@ -35,7 +35,7 @@ Launch file available parameters for `naive_motion_predict`
 
 |Topic|Type|Objective|
 ------|----|---------
-|`/detection/lidar_tracker/objects`|`autoware_msgs::DetectedObjectArray`|The result topic from Autoware Detection stack|
+|`/detection/objects`|`autoware_msgs::DetectedObjectArray`|The result topic from Autoware Detection stack|
 
 ### Published topics
 
