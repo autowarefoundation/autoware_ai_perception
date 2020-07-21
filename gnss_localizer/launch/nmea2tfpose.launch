@@ -5,6 +5,7 @@
 
   <node pkg="gnss_localizer" type="nmea2tfpose" name="nmea2tfpose" output="log">
     <param name="plane" value="$(arg plane)"/>
+    <param name="plane" value="0" if="$(arg sim_mode)"/>
   </node>
 
 </launch>
