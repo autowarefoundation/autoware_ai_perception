@@ -19,20 +19,7 @@ catkin_package(
 )
 
 set(ROSLINT_CPP_OPTS "--filter=-build/c++14")
-roslint_cpp(
-  ${PROJECT_SOURCE_DIR}/include/lidar_shape_estimation/model_interface.hpp
-  ${PROJECT_SOURCE_DIR}/include/lidar_shape_estimation/node.hpp
-  ${PROJECT_SOURCE_DIR}/include/lidar_shape_estimation/shape_estimator.hpp
-  ${PROJECT_SOURCE_DIR}/src/model/bounding_box.cpp
-  ${PROJECT_SOURCE_DIR}/src/model/bounding_box.hpp
-  ${PROJECT_SOURCE_DIR}/src/model/convex_hull.cpp
-  ${PROJECT_SOURCE_DIR}/src/model/convex_hull.hpp
-  ${PROJECT_SOURCE_DIR}/src/model/cylinder.cpp
-  ${PROJECT_SOURCE_DIR}/src/model/cylinder.hpp
-  ${PROJECT_SOURCE_DIR}/src/main.cpp
-  ${PROJECT_SOURCE_DIR}/src/node.cpp
-  ${PROJECT_SOURCE_DIR}/src/shape_estimator.cpp
-)
+roslint_cpp()
 
 include_directories(
   include
