@@ -16,7 +16,7 @@
 
 #include "feature_generator.h"
 
-bool FeatureGenerator::init(caffe::Blob<float>* out_blob, bool use_constant_feature)
+bool FeatureGenerator::init(caffe::Blob<float>* out_blob, bool use_constant_feature, bool normalize_lidar_intensity)
 {
   out_blob_ = out_blob;
 
@@ -28,6 +28,8 @@ bool FeatureGenerator::init(caffe::Blob<float>* out_blob, bool use_constant_feat
   max_height_ = 5.0;
   CHECK_EQ(width_, height_)
       << "Current implementation version requires input_width == input_height.";
+
+  normalize_lidar_intensity_ = normalize_lidar_intensity;
 
   // set output blob and log lookup table
   if(use_constant_feature){
@@ -134,9 +136,11 @@ void FeatureGenerator::generate(
 
     int idx = map_idx_[i];
     float pz = points[i].z;
-    // kitti dataset of intensify already in (0~1)!!!!!
-    float pi = points[i].intensity / 255.0;
-    // float pi = points[i].intensity;
+    float pi = points[i].intensity;
+    if (normalize_lidar_intensity_)
+    {
+      pi = pi / 255.0;
+    }
     if (max_height_data_[idx] < pz) {
       max_height_data_[idx] = pz;
       top_intensity_data_[idx] = pi;

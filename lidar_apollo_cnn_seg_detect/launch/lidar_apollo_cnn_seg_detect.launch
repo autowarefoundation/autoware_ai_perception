@@ -10,6 +10,7 @@
   <arg name="height" default="512" />
   <arg name="range" default="60" />
   <arg name="use_constant_feature" default="false"/>
+  <arg name="normalize_lidar_intensity" default="false"/>
 
   <node pkg="lidar_apollo_cnn_seg_detect" type="lidar_apollo_cnn_seg_detect" name="lidar_apollo_cnn_seg_detect_01" output="screen">
     <param name="network_definition_file" value="$(arg network_definition_file)" />
@@ -22,6 +23,7 @@
     <param name="width" value="$(arg width)" />
     <param name="range" value="$(arg range)" />
     <param name="use_constant_feature" value="$(arg use_constant_feature)" />
+    <param name="normalize_lidar_intensity" value="$(arg normalize_lidar_intensity)" />
   </node>
 
   <node pkg="detected_objects_visualizer" type="visualize_detected_objects" name="cluster_detect_visualization_01"

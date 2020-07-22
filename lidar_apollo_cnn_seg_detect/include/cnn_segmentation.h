@@ -62,6 +62,7 @@ private:
   int width_;
   int height_;
   bool use_constant_feature_;
+  bool normalize_lidar_intensity_;
   std_msgs::Header message_header_;
   std::string topic_src_;
 

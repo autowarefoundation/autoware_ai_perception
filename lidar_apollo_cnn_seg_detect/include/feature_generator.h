@@ -31,7 +31,7 @@ public:
   FeatureGenerator(){}
   ~FeatureGenerator(){}
 
-  bool init(caffe::Blob<float>* out_blob, bool use_constant_feature);
+  bool init(caffe::Blob<float>* out_blob, bool use_constant_feature, bool normalize_lidar_intensity);
   void generate(
       const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr);
 private:
@@ -41,6 +41,8 @@ private:
 
   float min_height_ = 0.0;
   float max_height_ = 0.0;
+
+  bool normalize_lidar_intensity_ = false;
 
   // raw feature data
   float* max_height_data_ = nullptr;

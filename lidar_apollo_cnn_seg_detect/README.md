@@ -63,6 +63,7 @@ Computing Tab -> Detection/ lidar_detector -> `lidar_cnn_baidu_detect`. Configur
 |`height`|*Int*|Height of the 2d cluster|`512`|
 |`range`|*Int*|Range for the 2d cluster|`60`|
 |`use_constant_feature`|*Bool*|Use constant model feature (8 features) |`false`|
+|`normalize_lidar_intensity`|*Bool*|Normalize the received lidar intensity data|`false`|
 
 ## Outputs
 

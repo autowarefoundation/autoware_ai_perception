@@ -63,6 +63,9 @@ bool CNNSegmentation::init()
   private_node_handle.param<bool>("use_constant_feature", use_constant_feature_, false);
   ROS_INFO("[%s] whether to use constant features: %d", __APP_NAME__, use_constant_feature_);
 
+  private_node_handle.param<bool>("normalize_lidar_intensity", normalize_lidar_intensity_, false);
+  ROS_INFO("[%s] whether to normalize lidar intensity data: %d", __APP_NAME__, normalize_lidar_intensity_);
+
   private_node_handle.param<bool>("use_gpu", use_gpu_, false);
   ROS_INFO("[%s] use_gpu: %d", __APP_NAME__, use_gpu_);
 
@@ -123,7 +126,7 @@ bool CNNSegmentation::init()
   }
 
   feature_generator_.reset(new FeatureGenerator());
-  if (!feature_generator_->init(feature_blob_.get(), use_constant_feature_))
+  if (!feature_generator_->init(feature_blob_.get(), use_constant_feature_, normalize_lidar_intensity_))
   {
     ROS_ERROR("[%s] Fail to Initialize feature generator for CNNSegmentation", __APP_NAME__);
     return false;
