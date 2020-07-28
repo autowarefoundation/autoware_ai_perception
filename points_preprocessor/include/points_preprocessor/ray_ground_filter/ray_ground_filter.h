@@ -1,5 +1,5 @@
 /*
- * Copyright 2017-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2017-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,12 +25,6 @@
 #include <string>
 #include <ros/ros.h>
 #include <sensor_msgs/PointCloud2.h>
-#include <pcl_ros/point_cloud.h>
-#include <pcl_conversions/pcl_conversions.h>
-#include <pcl/point_types.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/features/normal_3d_omp.h>
-#include <pcl/filters/extract_indices.h>
 #include <velodyne_pointcloud/point_types.h>
 #include "autoware_config_msgs/ConfigRayGroundFilter.h"
 
@@ -41,12 +35,8 @@
 // headers in Autoware Health Checker
 #include <autoware_health_checker/health_checker/health_checker.h>
 
-#include <opencv2/core/version.hpp>
-#if (CV_MAJOR_VERSION == 3)
-#include "gencolors.cpp"
-#else
-#include <opencv2/contrib/contrib.hpp>
-#endif
+#define USE_ATAN_APPROXIMATION
+
 
 class RayGroundFilter
 {
@@ -76,100 +66,81 @@ private:
   size_t radial_dividers_num_;
   size_t concentric_dividers_num_;
 
-  std::vector<cv::Scalar> colors_;
-  const size_t color_num_ = 60;  // different number of color to generate
 
-  struct PointXYZIRTColor
+  struct PointRH
   {
-    pcl::PointXYZI point;
-
+    float height;
     float radius;  // cylindric coords on XY Plane
-    float theta;   // angle deg on XY plane
+    void* original_data_pointer;
 
-    size_t radial_div;      // index of the radial divsion to which this point belongs to
-    size_t concentric_div;  // index of the concentric division to which this points belongs to
-
-    size_t red;    // Red component  [0-255]
-    size_t green;  // Green Component[0-255]
-    size_t blue;   // Blue component [0-255]
-
-    size_t original_index;  // index of this point in the source pointcloud
+    PointRH(float height, float radius, void* original_data_pointer)
+        : height(height), radius(radius), original_data_pointer(original_data_pointer)
+    {}
   };
-  typedef std::vector<PointXYZIRTColor> PointCloudXYZIRTColor;
+  typedef std::vector<PointRH> PointCloudRH;
 
   void update_config_params(const autoware_config_msgs::ConfigRayGroundFilter::ConstPtr& param);
 
   /*!
    * Output transformed PointCloud from in_cloud_ptr->header.frame_id to in_target_frame
-   * @param[in] in_target_frame Coordinate system to perform transform
-   * @param[in] in_cloud_ptr PointCloud to perform transform
-   * @param[out] out_cloud_ptr Resulting transformed PointCloud
+   * @param in_target_frame Coordinate system to perform transform
+   * @param in_cloud_ptr PointCloud to perform transform
+   * @param out_cloud_ptr Resulting transformed PointCloud
    * @retval true transform successed
    * @retval false transform faild
    */
   bool TransformPointCloud(const std::string& in_target_frame, const sensor_msgs::PointCloud2::ConstPtr& in_cloud_ptr,
                            const sensor_msgs::PointCloud2::Ptr& out_cloud_ptr);
 
-  void publish_cloud(const ros::Publisher& in_publisher,
-                     const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_to_publish_ptr,
-                     const std_msgs::Header& in_header);
+  /*!
+   * Extract the points pointed by in_selector from in_radial_ordered_clouds to copy them in out_no_ground_ptrs
+   * @param pub The ROS publisher on which to output the point cloud
+   * @param in_sensor_cloud The input point cloud from which to select the points to publish
+   * @param in_selector The pointers to the input cloud's binary blob. No checks are done so be carefull
+   */
+  void publish(ros::Publisher pub,
+                const sensor_msgs::PointCloud2ConstPtr in_sensor_cloud,
+                const std::vector<void*>& in_selector);
 
   /*!
-   *
-   * @param[in] in_cloud Input Point Cloud to be organized in radial segments
-   * @param[out] out_organized_points Custom Point Cloud filled with XYZRTZColor data
-   * @param[out] out_radial_divided_indices Indices of the points in the original cloud for each radial segment
-   * @param[out] out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
+   * Extract the points pointed by in_selector from in_radial_ordered_clouds to copy them in out_no_ground_ptrs
+   * @param in_origin_cloud The original cloud from which we want to copy the points
+   * @param in_selector The pointers to the input cloud's binary blob. No checks are done so be carefull
+   * @param out_filtered_msg Returns a cloud comprised of the selected points from the origin cloud
    */
-  void ConvertXYZIToRTZColor(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud,
-                             const std::shared_ptr<PointCloudXYZIRTColor>& out_organized_points,
-                             const std::shared_ptr<std::vector<pcl::PointIndices> >& out_radial_divided_indices,
-                             const std::shared_ptr<std::vector<PointCloudXYZIRTColor> >& out_radial_ordered_clouds);
+  void filterROSMsg(const sensor_msgs::PointCloud2ConstPtr in_origin_cloud,
+                     const std::vector<void*>& in_selector,
+                     const sensor_msgs::PointCloud2::Ptr out_filtered_msg);
 
   /*!
    * Classifies Points in the PointCoud as Ground and Not Ground
    * @param in_radial_ordered_clouds Vector of an Ordered PointsCloud ordered by radial distance from the origin
+   * @param in_point_count Total number of lidar point. This is used to reserve the output's vector memory
    * @param out_ground_indices Returns the indices of the points classified as ground in the original PointCloud
    * @param out_no_ground_indices Returns the indices of the points classified as not ground in the original PointCloud
    */
-  void ClassifyPointCloud(const std::vector<PointCloudXYZIRTColor>& in_radial_ordered_clouds,
-                          const pcl::PointIndices::Ptr& out_ground_indices,
-                          const pcl::PointIndices::Ptr& out_no_ground_indices);
+  void ClassifyPointCloud(const std::vector<PointCloudRH>& in_radial_ordered_clouds,
+                          const size_t in_point_count,
+                          std::vector<void*>* out_ground_ptrs,
+                          std::vector<void*>* out_no_ground_ptrs);
 
   /*!
-   * Removes the points higher than a threshold
-   * @param in_cloud_ptr PointCloud to perform Clipping
+   * Convert the sensor_msgs::PointCloud2 into PointCloudRH and filter out the points too high or too close
+   * @param in_transformed_cloud Input Point Cloud to be organized in radial segments
    * @param in_clip_height Maximum allowed height in the cloud
-   * @param out_clipped_cloud_ptr Resultung PointCloud with the points removed
-   */
-  void ClipCloud(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, const double in_clip_height,
-                 pcl::PointCloud<pcl::PointXYZI>::Ptr out_clipped_cloud_ptr);
-
-  /*!
-   * Returns the resulting complementary PointCloud, one with the points kept and the other removed as indicated
-   * in the indices
-   * @param in_cloud_ptr Input PointCloud to which the extraction will be performed
-   * @param in_indices Indices of the points to be both removed and kept
-   * @param out_only_indices_cloud_ptr Resulting PointCloud with the indices kept
-   * @param out_removed_indices_cloud_ptr Resulting PointCloud with the indices removed
-   */
-  void ExtractPointsIndices(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr,
-                            const pcl::PointIndices& in_indices,
-                            pcl::PointCloud<pcl::PointXYZI>::Ptr out_only_indices_cloud_ptr,
-                            pcl::PointCloud<pcl::PointXYZI>::Ptr out_removed_indices_cloud_ptr);
-
-  /*!
-   * Removes points up to a certain distance in the XY Plane
-   * @param in_cloud_ptr Input PointCloud
    * @param in_min_distance Minimum valid distance, points closer than this will be removed.
-   * @param out_filtered_cloud_ptr Resulting PointCloud with the invalid points removed.
+   * @param out_radial_ordered_clouds Vector of Points Clouds, each element will contain the points ordered
+   * @param out_no_ground_ptrs Returns the pointers to the points filtered out as no ground
    */
-  void RemovePointsUpTo(const pcl::PointCloud<pcl::PointXYZI>::Ptr in_cloud_ptr, double in_min_distance,
-                        pcl::PointCloud<pcl::PointXYZI>::Ptr out_filtered_cloud_ptr);
+  void ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_transformed_cloud,
+                      const double in_clip_height,
+                      double in_min_distance,
+                      std::vector<PointCloudRH>* out_radial_ordered_clouds,
+                      std::vector<void*>* out_no_ground_ptrs);
 
   void CloudCallback(const sensor_msgs::PointCloud2ConstPtr& in_sensor_cloud);
 
-  friend class RayGroundFilter_clipCloud_Test;
+  friend class RayGroundFilter_callback_Test;
 
 public:
   RayGroundFilter();

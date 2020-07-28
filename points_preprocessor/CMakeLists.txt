@@ -95,12 +95,10 @@ endif()
 
 target_include_directories(ray_ground_filter_lib PRIVATE
   ${OpenCV_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
 )
 
 target_link_libraries(ray_ground_filter_lib
   ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
   ${OpenCV_LIBRARIES}
   ${Qt5Core_LIBRARIES}
 )
@@ -163,20 +161,20 @@ target_link_libraries(compare_map_filter
 add_dependencies(compare_map_filter ${catkin_EXPORTED_TARGETS})
 
 ### Unit Tests ###
-#if (CATKIN_ENABLE_TESTING)
-#    find_package(rostest REQUIRED)
-#    find_package(roslaunch REQUIRED)
+if (CATKIN_ENABLE_TESTING)
+    find_package(rostest REQUIRED)
+    find_package(roslaunch REQUIRED)
 
-#    add_rostest_gtest(test_points_preprocessor
-#      test/test_points_preprocessor.test
-#      test/src/test_points_preprocessor.cpp)
-#   target_include_directories(test_points_preprocessor PRIVATE
-#          nodes/ray_ground_filter/include
-#            test/include)
-#    target_link_libraries(test_points_preprocessor
-#            ray_ground_filter_lib
-#            ${catkin_LIBRARIES})
-#endif ()
+    add_rostest_gtest(test_points_preprocessor
+      test/test_points_preprocessor.test
+      test/src/test_points_preprocessor.cpp)
+    target_include_directories(test_points_preprocessor PRIVATE
+      nodes/ray_ground_filter/include
+      test/include)
+    target_link_libraries(test_points_preprocessor
+      ray_ground_filter_lib
+      ${catkin_LIBRARIES})
+endif ()
 
 install(
   TARGETS
