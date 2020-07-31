@@ -3,15 +3,12 @@
 
 <launch>
 
-  <!-- Select log or screen output -->
-  <arg name="output" default="log"/> <!-- screen/log -->
-
-  <!-- Start the laserscan node -->
-  <node pkg="points_preprocessor" type="ray_ground_filter" name="ray_ground_filter" output="$(arg output)" />
+  <!-- Start the static transform node -->
+  <node pkg="tf2_ros" type="static_transform_publisher" name="link1_broadcaster" args="-0.1 0 0.6 0 0 0 base_link velodyne"/>
 
   <!-- Start the rostest -->
   <test test-name="test_points_preprocessor" pkg="points_preprocessor"
-        type="test_raygroundfilter_clipcloud" name="test_ray_ground_filter">
+        type="test_points_preprocessor" name="test_ray_ground_filter">
   </test>
 
 </launch>
