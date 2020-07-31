@@ -16,8 +16,12 @@
  * v1.0 Yukihiro Saito
  */
 
-#include "bounding_box.hpp"
 #include <cmath>
+#include <vector>
+#include <utility>
+#include <algorithm>
+
+#include "bounding_box.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -44,9 +48,9 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, a
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;
   }
-  centroid.x = centroid.x / (double)cluster.size();
-  centroid.y = centroid.y / (double)cluster.size();
-  centroid.z = centroid.z / (double)cluster.size();
+  centroid.x = centroid.x / static_cast<double>(cluster.size());
+  centroid.y = centroid.y / static_cast<double>(cluster.size());
+  centroid.z = centroid.z / static_cast<double>(cluster.size());
 
   // calc min and max z for cylinder length
   double min_z = 0;
@@ -60,7 +64,7 @@ bool BoundingBoxModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, a
   }
 
   // calc circumscribed circle on x-y plane
-  cv::Mat_<float> cv_points((int)cluster.size(), 2);
+  cv::Mat_<float> cv_points(static_cast<int>(cluster.size()), 2);
   for (size_t i = 0; i < cluster.size(); ++i)
   {
     cv_points(i, 0) = cluster.at(i).x;  // x

@@ -17,6 +17,8 @@
  * v1.0 Yukihiro Saito
  */
 
+#include <string>
+
 #include <ros/ros.h>
 #include <gtest/gtest.h>
 #include <pcl/point_types.h>
@@ -40,7 +42,9 @@ public:
 class ShapeEstimationTestClass
 {
 public:
-  ShapeEstimationTestClass(){};
+  ShapeEstimationTestClass()
+  {
+  }
 
   ShapeEstimator shape_estimator;
 };
