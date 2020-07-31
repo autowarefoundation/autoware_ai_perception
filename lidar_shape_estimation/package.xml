@@ -12,9 +12,10 @@
   <depend>autoware_msgs</depend>
   <depend>pcl_ros</depend>
   <depend>roscpp</depend>
+  <depend>roslint</depend>
   <depend>tf2</depend>
   <depend>tf2_geometry_msgs</depend>
-  
+
   <exec_depend>rostest</exec_depend>
   <exec_depend>rosunit</exec_depend>
 </package>

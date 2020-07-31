@@ -6,6 +6,7 @@ find_package(catkin REQUIRED COMPONENTS
   autoware_msgs
   pcl_ros
   roscpp
+  roslint
   tf2
   tf2_geometry_msgs
 )
@@ -16,6 +17,9 @@ find_package(OpenCV REQUIRED)
 catkin_package(
   INCLUDE_DIRS include
 )
+
+set(ROSLINT_CPP_OPTS "--filter=-build/c++14")
+roslint_cpp()
 
 include_directories(
   include
@@ -57,17 +61,19 @@ install(DIRECTORY launch/
 
 if(CATKIN_ENABLE_TESTING)
   find_package(rostest REQUIRED)
-  add_rostest_gtest(test-lidar_shape_estimation 
-    test/test_lidar_shape_estimation.test 
+  add_rostest_gtest(test-lidar_shape_estimation
+    test/test_lidar_shape_estimation.test
     test/src/test_lidar_shape_estimation.cpp
     src/shape_estimator.cpp
     src/model/bounding_box.cpp
     src/model/convex_hull.cpp
     src/model/cylinder.cpp
   )
-  target_link_libraries(test-lidar_shape_estimation 
+  target_link_libraries(test-lidar_shape_estimation
     ${catkin_LIBRARIES}
     ${OpenCV_LIBS}
     ${PCL_LIBRARIES}
   )
+
+  roslint_add_test()
 endif()

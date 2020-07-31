@@ -17,13 +17,14 @@
  * v1.0 Yukihiro Saito
  */
 
+#include <memory>
+#include <string>
+
 #include "lidar_shape_estimation/shape_estimator.hpp"
 #include "lidar_shape_estimation/model_interface.hpp"
 #include "model/bounding_box.hpp"
 #include "model/convex_hull.hpp"
 #include "model/cylinder.hpp"
-#include <memory>
-#include <iostream>
 
 ShapeEstimator::ShapeEstimator()
 {

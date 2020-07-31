@@ -17,6 +17,8 @@
  * v1.0 Yukihiro Saito
  */
 
+#include <algorithm>
+
 #include "cylinder.hpp"
 #include <opencv2/core/core.hpp>
 #include <opencv2/highgui/highgui.hpp>
@@ -38,9 +40,9 @@ bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, auto
     centroid.y += pcl_point.y;
     centroid.z += pcl_point.z;
   }
-  centroid.x = centroid.x / (double)cluster.size();
-  centroid.y = centroid.y / (double)cluster.size();
-  centroid.z = centroid.z / (double)cluster.size();
+  centroid.x = centroid.x / static_cast<double>(cluster.size());
+  centroid.y = centroid.y / static_cast<double>(cluster.size());
+  centroid.z = centroid.z / static_cast<double>(cluster.size());
 
   // calc min and max z for cylinder length
   double min_z = 0;
@@ -54,7 +56,7 @@ bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, auto
   }
 
   // calc circumscribed circle on x-y plane
-  cv::Mat_<float> cv_points((int)cluster.size(), 2);
+  cv::Mat_<float> cv_points(static_cast<int>(cluster.size()), 2);
   for (size_t i = 0; i < cluster.size(); ++i)
   {
     cv_points(i, 0) = cluster.at(i).x;  // x
@@ -64,12 +66,12 @@ bool CylinderModel::estimate(const pcl::PointCloud<pcl::PointXYZ>& cluster, auto
   float radius;
   cv::minEnclosingCircle(cv::Mat(cv_points).reshape(2), center, radius);
   constexpr double ep = 0.001;
-  radius = std::max(radius, (float)ep);
+  radius = std::max(radius, static_cast<float>(ep));
   output.pose.position.x = center.x;
   output.pose.position.y = center.y;
   output.pose.position.z = centroid.z;
-  output.dimensions.x = (double)radius * 2.0;
-  output.dimensions.y = (double)radius * 2.0;
+  output.dimensions.x = static_cast<double>(radius) * 2.0;
+  output.dimensions.y = static_cast<double>(radius) * 2.0;
   output.dimensions.z = std::max((max_z - min_z), ep);
   output.pose_reliable = true;
   return true;
