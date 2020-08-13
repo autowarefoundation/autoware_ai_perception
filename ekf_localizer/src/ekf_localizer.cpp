@@ -27,10 +27,10 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   pnh_.param("show_debug_info", show_debug_info_, bool(false));
   pnh_.param("predict_frequency", ekf_rate_, double(50.0));
   ekf_dt_ = 1.0 / std::max(ekf_rate_, 0.1);
-  pnh_.param("tf_rate", tf_rate_, double(10.0));
   pnh_.param("enable_yaw_bias_estimation", enable_yaw_bias_estimation_, bool(true));
   pnh_.param("extend_state_step", extend_state_step_, int(50));
-  pnh_.param("pose_frame_id", pose_frame_id_, std::string("/map"));
+  pnh_.param("pose_frame_id", pose_frame_id_, std::string("map"));
+  pnh_.param("output_frame_id", output_frame_id_, std::string("base_link"));
 
   /* pose measurement */
   pnh_.param("pose_additional_delay", pose_additional_delay_, double(0.0));
@@ -70,7 +70,6 @@ EKFLocalizer::EKFLocalizer() : nh_(""), pnh_("~"), dim_x_(6 /* x, y, yaw, yaw_bi
   /* initialize ros system */
 
   timer_control_ = nh_.createTimer(ros::Duration(ekf_dt_), &EKFLocalizer::timerCallback, this);
-  timer_tf_ = nh_.createTimer(ros::Duration(1.0 / tf_rate_), &EKFLocalizer::timerTFCallback, this);
   pub_pose_ = nh_.advertise<geometry_msgs::PoseStamped>("ekf_pose", 1);
   pub_pose_cov_ = nh_.advertise<geometry_msgs::PoseWithCovarianceStamped>("ekf_pose_with_covariance", 1);
   pub_twist_ = nh_.advertise<geometry_msgs::TwistStamped>("ekf_twist", 1);
@@ -183,17 +182,18 @@ void EKFLocalizer::setCurrentResult()
 }
 
 /*
- * timerTFCallback
+ * broadcastTF
  */
-void EKFLocalizer::timerTFCallback(const ros::TimerEvent& e)
+void EKFLocalizer::broadcastTF()
 {
   if (current_ekf_pose_.header.frame_id == "")
+  {
     return;
+  }
 
   geometry_msgs::TransformStamped transformStamped;
-  transformStamped.header.stamp = ros::Time::now();
-  transformStamped.header.frame_id = current_ekf_pose_.header.frame_id;
-  transformStamped.child_frame_id = "ekf_pose";
+  transformStamped.header = current_ekf_pose_.header;
+  transformStamped.child_frame_id = output_frame_id_;
   transformStamped.transform.translation.x = current_ekf_pose_.pose.position.x;
   transformStamped.transform.translation.y = current_ekf_pose_.pose.position.y;
   transformStamped.transform.translation.z = current_ekf_pose_.pose.position.z;
@@ -709,6 +709,8 @@ void EKFLocalizer::publishEstimateResult()
   twist_cov.twist.covariance[35] = P(IDX::WZ, IDX::WZ);
   pub_twist_cov_.publish(twist_cov);
 
+  /* Send transform of pose */
+  broadcastTF();
 
   /* publish yaw bias */
   std_msgs::Float64 yawb;
