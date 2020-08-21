@@ -353,7 +353,13 @@ void RayGroundFilter::ConvertAndTrim(const sensor_msgs::PointCloud2::Ptr in_tran
       theta -= 360;
     }
 
-    auto radial_div = (size_t)floor(theta / radial_divider_angle_);
+    // radial_divider_angle_ is computed so that
+    // 360 / radial_divider_angle_ = radial_dividers_num_
+    // Even though theta < 360, rounding error may make it so that
+    // theta / radial_divider_angle_ >= radial_dividers_num_
+    // which gives a radial_div one past the end. The modulo is here to fix
+    // this rare case, wrapping the bad radial_div back to the first one.
+    auto radial_div = (size_t)floor(theta / radial_divider_angle_) % radial_dividers_num_;
     out_radial_ordered_clouds->at(radial_div).emplace_back(z, radius, point_start_ptr);
   }  // end for
 
