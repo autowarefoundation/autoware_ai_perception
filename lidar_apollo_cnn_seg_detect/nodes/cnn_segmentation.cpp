@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -49,7 +49,7 @@ bool CNNSegmentation::init()
   ROS_INFO("[%s] points_src: %s", __APP_NAME__, topic_src_.c_str());
 
   private_node_handle.param<double>("range", range_, 60.);
-  ROS_INFO("[%s] Pretrained Model File: %.2f", __APP_NAME__, range_);
+  ROS_INFO("[%s] range: %.2f", __APP_NAME__, range_);
 
   private_node_handle.param<double>("score_threshold", score_threshold_, 0.6);
   ROS_INFO("[%s] score_threshold: %.2f", __APP_NAME__, score_threshold_);
@@ -59,6 +59,12 @@ bool CNNSegmentation::init()
 
   private_node_handle.param<int>("height", height_, 512);
   ROS_INFO("[%s] height: %d", __APP_NAME__, height_);
+
+  private_node_handle.param<bool>("use_constant_feature", use_constant_feature_, false);
+  ROS_INFO("[%s] whether to use constant features: %d", __APP_NAME__, use_constant_feature_);
+
+  private_node_handle.param<bool>("normalize_lidar_intensity", normalize_lidar_intensity_, false);
+  ROS_INFO("[%s] whether to normalize lidar intensity data: %d", __APP_NAME__, normalize_lidar_intensity_);
 
   private_node_handle.param<bool>("use_gpu", use_gpu_, false);
   ROS_INFO("[%s] use_gpu: %d", __APP_NAME__, use_gpu_);
@@ -120,7 +126,7 @@ bool CNNSegmentation::init()
   }
 
   feature_generator_.reset(new FeatureGenerator());
-  if (!feature_generator_->init(feature_blob_.get()))
+  if (!feature_generator_->init(feature_blob_.get(), use_constant_feature_, normalize_lidar_intensity_))
   {
     ROS_ERROR("[%s] Fail to Initialize feature generator for CNNSegmentation", __APP_NAME__);
     return false;
@@ -191,7 +197,11 @@ void CNNSegmentation::test_run()
 
 void CNNSegmentation::run()
 {
-  init();
+  if(this->init()){
+    ROS_INFO("Network init successfully!");
+  }else{
+    ROS_ERROR("Network init fail!!!");
+  }
 
   points_sub_ = nh_.subscribe(topic_src_, 1, &CNNSegmentation::pointsCallback, this);
   points_pub_ = nh_.advertise<sensor_msgs::PointCloud2>("/detection/lidar_detector/points_cluster", 1);

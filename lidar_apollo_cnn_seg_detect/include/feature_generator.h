@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,7 @@ public:
   FeatureGenerator(){}
   ~FeatureGenerator(){}
 
-  bool init(caffe::Blob<float>* out_blob);
+  bool init(caffe::Blob<float>* out_blob, bool use_constant_feature, bool normalize_lidar_intensity);
   void generate(
       const pcl::PointCloud<pcl::PointXYZI>::Ptr& pc_ptr);
 private:
@@ -41,6 +41,8 @@ private:
 
   float min_height_ = 0.0;
   float max_height_ = 0.0;
+
+  bool normalize_lidar_intensity_ = false;
 
   // raw feature data
   float* max_height_data_ = nullptr;

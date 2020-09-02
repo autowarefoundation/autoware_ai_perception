@@ -13,7 +13,7 @@ $ cd caffe
 ```
 Follow instructions from [Installing Caffe from source](http://caffe.berkeleyvision.org/installation.html).
 
-* **Use offical Make compilation procedure**. 
+* **Use offical Make compilation procedure**.
 * Do not use thirdparty CMake setup.
 
 Compile and create distributable:
@@ -23,6 +23,17 @@ $ make distribute
 ```
 
 **Recompile Autoware to build the node.**
+
+## The Pretrained model
+
+Use this link to download the pretrained model from Baidu:
+
+https://github.com/ApolloAuto/apollo/tree/v5.5.0/modules/perception/production/data/perception/lidar/models/cnnseg
+
+These two files are needed:
+
+* deploy.prototxt
+* deploy.caffemodel
 
 ## How to launch
 
@@ -48,6 +59,11 @@ Computing Tab -> Detection/ lidar_detector -> `lidar_cnn_baidu_detect`. Configur
 |`score_threshold`|*Double*|Minimum score required as given by the network to include the result (0.-1.)|0.6|
 |`use_gpu`|*Bool*|Whether ot not to use a GPU device|`true`|
 |`gpu_device_id`|*Int*|GPU ID|`0`|
+|`width`|*Int*|Width of the 2d cluster|`512`|
+|`height`|*Int*|Height of the 2d cluster|`512`|
+|`range`|*Int*|Range for the 2d cluster|`60`|
+|`use_constant_feature`|*Bool*|Use constant model feature (8 features) |`false`|
+|`normalize_lidar_intensity`|*Bool*|Normalize the received lidar intensity data|`false`|
 
 ## Outputs
 

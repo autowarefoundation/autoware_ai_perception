@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -61,6 +61,8 @@ private:
   double range_, score_threshold_;
   int width_;
   int height_;
+  bool use_constant_feature_;
+  bool normalize_lidar_intensity_;
   std_msgs::Header message_header_;
   std::string topic_src_;
 
