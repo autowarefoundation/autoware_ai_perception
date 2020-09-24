@@ -5,7 +5,7 @@
 
 1. Compile Autoware
 
-2. Download and decompress [trained data](http://db3.ertl.jp/autoware/tlr_trained_model/data.tar.bz2)(or use your own) under `Autoware/ros/src/computing/perception/detection/packages/rtrafficlight_recognizer/data`.  
+2. Download and decompress [trained data](https://autoware-ai.s3.us-east-2.amazonaws.com/region_tlr_ssd_trained_weights.tar.bz2)(or use your own) under `Autoware/ros/src/computing/perception/detection/packages/rtrafficlight_recognizer/data`.  
 
    Decompression result will be like followings:
    ```
