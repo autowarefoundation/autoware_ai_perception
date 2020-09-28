@@ -55,15 +55,17 @@ else()
   set(CUDNN_AVAIL OFF)
 endif()
 
-if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
+# Check TVM utility, runtime libraries and TVM flag
+option(TVM_AVAIL "TVM implementation available" OFF)
+find_library(TVM_LIBRARY NAMES tvm_runtime)
+
+if(CUDA_AVAIL AND ((TRT_AVAIL AND CUDNN_AVAIL) OR (TVM_AVAIL AND TVM_LIBRARY)))
   find_package(catkin REQUIRED COMPONENTS
     roscpp
     roslib
     pcl_ros
     autoware_msgs
   )
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
   catkin_package(
     CATKIN_DEPENDS
@@ -71,6 +73,19 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
       pcl_ros
       autoware_msgs
   )
+  set(CMAKE_CXX_STANDARD 11)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+
+  # Look for tvm_utility if this build is using TVM model
+  if(TVM_AVAIL)
+    find_package(catkin REQUIRED COMPONENTS
+      tvm_utility
+    )
+    set(CMAKE_CXX_STANDARD_REQUIRED ON)
+    set(CMAKE_CXX_EXTENSIONS OFF)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTVM_IMPLEMENTATION")
+    include_directories(tvm_models)
+  endif()
 
   include_directories(
     include
@@ -103,20 +118,37 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
     ${CUDA_LIBRARIES}
   )
 
-  add_library(point_pillars_lib
-    nodes/point_pillars.cpp
-    nodes/preprocess_points.cpp
-  )
+  if(TVM_AVAIL)
+    add_library(point_pillars_lib
+      nodes/point_pillars.cpp
+      nodes/preprocess_points.cpp
+      nodes/pfe_tvm_pipeline.cpp
+      nodes/rpn_tvm_pipeline.cpp
+    )
 
-  target_link_libraries(point_pillars_lib
-    ${NVINFER}
-    ${NVONNXPARSERS}
-    ${CUDA_LIBRARIES}
-    ${CUDA_CUBLAS_LIBRARIES}
-    ${CUDA_curand_LIBRARY}
-    ${CUDNN_LIBRARY}
-    gpu_point_pillars_lib
-  )
+    target_link_libraries(point_pillars_lib
+      tvm_runtime
+      ${CUDA_LIBRARIES}
+      ${CUDA_CUBLAS_LIBRARIES}
+      ${CUDA_curand_LIBRARY}
+      gpu_point_pillars_lib
+    )
+  else()
+    add_library(point_pillars_lib
+      nodes/point_pillars.cpp
+      nodes/preprocess_points.cpp
+    )
+
+    target_link_libraries(point_pillars_lib
+      ${NVINFER}
+      ${NVONNXPARSERS}
+      ${CUDA_LIBRARIES}
+      ${CUDA_CUBLAS_LIBRARIES}
+      ${CUDA_curand_LIBRARY}
+      ${CUDNN_LIBRARY}
+      gpu_point_pillars_lib
+    )
+  endif()
 
   target_link_libraries(lidar_point_pillars
     ${catkin_LIBRARIES}
@@ -136,6 +168,10 @@ if(TRT_AVAIL AND CUDA_AVAIL AND CUDNN_AVAIL)
   install(DIRECTORY launch/
     DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/launch
     PATTERN ".svn" EXCLUDE
+  )
+
+  install(DIRECTORY tvm_models/
+    DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/tvm_models
   )
 
   install(DIRECTORY include/

@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -113,12 +113,16 @@ TestClass::TestClass(const int MAX_NUM_PILLARS, const int MAX_NUM_POINTS_PER_PIL
   float score_threshold = 0.5;
   float nms_overlap_threshold = 0.5;
   std::string package_path = ros::package::getPath("lidar_point_pillars");
-  std::string onnx_path = package_path + "/test/data/dummy.onnx";
-  std::string pfe_onnx_file = onnx_path;
-  std::string rpn_onnx_file = onnx_path;
+#ifdef TVM_IMPLEMENTATION
+  std::string path = package_path + "/test/data/data_tvm/";
+#else
+  std::string path = package_path + "/test/data/data_onnx/dummy.onnx";
+#endif
+  std::string pfe_path = path;
+  std::string rpn_path = path;
 
   point_pillars_ptr_.reset(new PointPillars(reproduce_result_mode, score_threshold, nms_overlap_threshold,
-                                            pfe_onnx_file, rpn_onnx_file));
+                                            pfe_path, rpn_path));
 };
 
 void TestClass::preprocess(const float* in_points_array, int in_num_points, int* x_coors, int* y_coors,

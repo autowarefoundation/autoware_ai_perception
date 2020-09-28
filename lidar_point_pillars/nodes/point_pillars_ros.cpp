@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,7 @@
 
 // headers in ROS
 #include <tf/transform_datatypes.h>
+#include <ros/package.h>
 
 // headers in local files
 #include "autoware_msgs/DetectedObjectArray.h"
@@ -48,9 +49,20 @@ PointPillarsROS::PointPillarsROS()
   private_nh_.param<float>("nms_overlap_threshold", nms_overlap_threshold_, 0.5f);
   private_nh_.param<std::string>("pfe_onnx_file", pfe_onnx_file_, "");
   private_nh_.param<std::string>("rpn_onnx_file", rpn_onnx_file_, "");
-
+#ifdef TVM_IMPLEMENTATION
+  point_pillars_ptr_.reset(
+    new PointPillars(
+        reproduce_result_mode_,
+        score_threshold_,
+        nms_overlap_threshold_,
+        ros::package::getPath("lidar_point_pillars") + "/tvm_models/tvm_point_pillars_pfe/",
+        ros::package::getPath("lidar_point_pillars") + "/tvm_models/tvm_point_pillars_rpn/"
+      )
+  );
+#else
   point_pillars_ptr_.reset(new PointPillars(reproduce_result_mode_, score_threshold_, nms_overlap_threshold_,
-                                            pfe_onnx_file_, rpn_onnx_file_));
+                                          pfe_onnx_file_, rpn_onnx_file_));
+#endif
 }
 
 void PointPillarsROS::createROSPubSub()

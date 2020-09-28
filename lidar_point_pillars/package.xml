@@ -13,4 +13,5 @@
   <depend>pcl_ros</depend>
   <depend>roscpp</depend>
   <depend>roslib</depend>
+  <depend>tvm_utility</depend>
 </package>
