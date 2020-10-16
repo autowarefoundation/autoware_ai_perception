@@ -121,7 +121,8 @@ static double max_scan_range = 200.0;
 static double min_add_scan_shift = 1.0;
 static double max_submap_size = 100.0;
 
-static double _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
+static float _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
+static std::vector<float> _tf_baselink2primarylidar;
 static Eigen::Matrix4f tf_btol, tf_ltob;
 
 static bool isMapUpdate = true;
@@ -893,37 +894,24 @@ int main(int argc, char** argv)
   std::cout << "use_odom: " << _use_odom << std::endl;
   std::cout << "imu_topic: " << _imu_topic << std::endl;
 
-  if (nh.getParam("tf_x", _tf_x) == false)
+  if (!nh.getParam("tf_baselink2primarylidar", _tf_baselink2primarylidar))
   {
-    std::cout << "tf_x is not set." << std::endl;
-    return 1;
-  }
-  if (nh.getParam("tf_y", _tf_y) == false)
-  {
-    std::cout << "tf_y is not set." << std::endl;
-    return 1;
-  }
-  if (nh.getParam("tf_z", _tf_z) == false)
-  {
-    std::cout << "tf_z is not set." << std::endl;
-    return 1;
-  }
-  if (nh.getParam("tf_roll", _tf_roll) == false)
-  {
-    std::cout << "tf_roll is not set." << std::endl;
-    return 1;
-  }
-  if (nh.getParam("tf_pitch", _tf_pitch) == false)
-  {
-    std::cout << "tf_pitch is not set." << std::endl;
-    return 1;
-  }
-  if (nh.getParam("tf_yaw", _tf_yaw) == false)
-  {
-    std::cout << "tf_yaw is not set." << std::endl;
+    std::cout << "baselink to primary lidar transform is not set." << std::endl;
     return 1;
   }
 
+  // translation x, y, z, yaw, pitch, and roll
+  if (_tf_baselink2primarylidar.size() != 6) {
+    std::cout << "baselink to primary lidar transform is not valid." << std::endl;
+    return 1;
+  }
+
+  _tf_x = _tf_baselink2primarylidar[0];
+  _tf_y = _tf_baselink2primarylidar[1];
+  _tf_z = _tf_baselink2primarylidar[2];
+  _tf_yaw = _tf_baselink2primarylidar[3];
+  _tf_pitch = _tf_baselink2primarylidar[4];
+  _tf_roll = _tf_baselink2primarylidar[5];
   std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
             << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
 
