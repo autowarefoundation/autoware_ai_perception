@@ -216,41 +216,67 @@ void publishDetectedObjects(const autoware_msgs::CloudClusterArray &in_clusters)
   _pub_detected_objects.publish(detected_objects);
 }
 
-void publishCloudClusters(const ros::Publisher *in_publisher, const autoware_msgs::CloudClusterArray &in_clusters,
-                          const std::string &in_target_frame, const std_msgs::Header &in_header)
+void publishCloudClusters(const ros::Publisher* in_publisher, const autoware_msgs::CloudClusterArray& in_clusters,
+                          const std::string& in_target_frame, const std_msgs::Header& in_header)
 {
   if (in_target_frame != in_header.frame_id)
   {
     autoware_msgs::CloudClusterArray clusters_transformed;
     clusters_transformed.header = in_header;
     clusters_transformed.header.frame_id = in_target_frame;
-    for (auto i = in_clusters.clusters.begin(); i != in_clusters.clusters.end(); i++)
+    geometry_msgs::PointStamped new_point_stamped;
+    geometry_msgs::PointStamped new_point_stamped_tfed;
+
+    for (const auto& cluster : in_clusters.clusters)
     {
       autoware_msgs::CloudCluster cluster_transformed;
       cluster_transformed.header = in_header;
       try
       {
-        _transform_listener->lookupTransform(in_target_frame, _velodyne_header.frame_id, ros::Time(),
-                                             *_transform);
-        pcl_ros::transformPointCloud(in_target_frame, *_transform, i->cloud, cluster_transformed.cloud);
-        _transform_listener->transformPoint(in_target_frame, ros::Time(), i->min_point, in_header.frame_id,
+        _transform_listener->lookupTransform(in_target_frame, _velodyne_header.frame_id, ros::Time(), *_transform);
+        pcl_ros::transformPointCloud(in_target_frame, *_transform, cluster.cloud, cluster_transformed.cloud);
+        _transform_listener->transformPoint(in_target_frame, ros::Time(), cluster.min_point, in_header.frame_id,
                                             cluster_transformed.min_point);
-        _transform_listener->transformPoint(in_target_frame, ros::Time(), i->max_point, in_header.frame_id,
+        _transform_listener->transformPoint(in_target_frame, ros::Time(), cluster.max_point, in_header.frame_id,
                                             cluster_transformed.max_point);
-        _transform_listener->transformPoint(in_target_frame, ros::Time(), i->avg_point, in_header.frame_id,
+        _transform_listener->transformPoint(in_target_frame, ros::Time(), cluster.avg_point, in_header.frame_id,
                                             cluster_transformed.avg_point);
-        _transform_listener->transformPoint(in_target_frame, ros::Time(), i->centroid_point, in_header.frame_id,
+        _transform_listener->transformPoint(in_target_frame, ros::Time(), cluster.centroid_point, in_header.frame_id,
                                             cluster_transformed.centroid_point);
 
-        cluster_transformed.dimensions = i->dimensions;
-        cluster_transformed.eigen_values = i->eigen_values;
-        cluster_transformed.eigen_vectors = i->eigen_vectors;
-
-        cluster_transformed.convex_hull = i->convex_hull;
-        cluster_transformed.bounding_box.pose.position = i->bounding_box.pose.position;
-        if(_pose_estimation)
+        // Convex_hull
+        cluster_transformed.convex_hull.polygon.points.resize(cluster.convex_hull.polygon.points.size());
+        cluster_transformed.convex_hull.header.frame_id = in_target_frame;
+        for (size_t i = 0; i < cluster.convex_hull.polygon.points.size(); i++)
         {
-          cluster_transformed.bounding_box.pose.orientation = i->bounding_box.pose.orientation;
+          geometry_msgs::Point32 new_point32;
+          new_point_stamped.header.frame_id = in_header.frame_id;
+          new_point_stamped.point.x = static_cast<double>(cluster.convex_hull.polygon.points[i].x);
+          new_point_stamped.point.y = static_cast<double>(cluster.convex_hull.polygon.points[i].y);
+          new_point_stamped.point.z = static_cast<double>(cluster.convex_hull.polygon.points[i].z);
+          _transform_listener->transformPoint(in_target_frame, ros::Time(), new_point_stamped, in_header.frame_id,
+                                              new_point_stamped_tfed);
+          new_point32.x = static_cast<float>(new_point_stamped_tfed.point.x);
+          new_point32.y = static_cast<float>(new_point_stamped_tfed.point.y);
+          new_point32.z = static_cast<float>(new_point_stamped_tfed.point.z);
+          cluster_transformed.convex_hull.polygon.points[i] = new_point32;
+        }
+
+        // BoundingBox
+        geometry_msgs::PoseStamped bb_pose_stamped;
+        geometry_msgs::PoseStamped bb_pose_stamped_tfed;
+        bb_pose_stamped.header = in_header;
+        bb_pose_stamped.pose = cluster.bounding_box.pose;
+        _transform_listener->transformPose(in_target_frame, bb_pose_stamped, bb_pose_stamped_tfed);
+        cluster_transformed.bounding_box.pose = bb_pose_stamped_tfed.pose;
+
+        cluster_transformed.dimensions = cluster.dimensions;
+        cluster_transformed.eigen_values = cluster.eigen_values;
+        cluster_transformed.eigen_vectors = cluster.eigen_vectors;
+
+        if (_pose_estimation)
+        {
+          cluster_transformed.bounding_box.pose.orientation = cluster.bounding_box.pose.orientation;
         }
         else
         {
@@ -258,14 +284,15 @@ void publishCloudClusters(const ros::Publisher *in_publisher, const autoware_msg
         }
         clusters_transformed.clusters.push_back(cluster_transformed);
       }
-      catch (tf::TransformException &ex)
+      catch (tf::TransformException& ex)
       {
         ROS_ERROR("publishCloudClusters: %s", ex.what());
       }
     }
     in_publisher->publish(clusters_transformed);
     publishDetectedObjects(clusters_transformed);
-  } else
+  }
+  else
   {
     in_publisher->publish(in_clusters);
     publishDetectedObjects(in_clusters);
