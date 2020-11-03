@@ -13,6 +13,7 @@
   <arg name="use_local_transform" default="false" />
   <arg name="sync" default="false" />
   <arg name="output_log_data" default="false" />
+  <arg name="output_tf_frame_id" default="base_link"/>
   <arg name="gnss_reinit_fitness" default="500.0" />
 
   <node pkg="lidar_localizer" type="ndt_matching" name="ndt_matching" output="log">
@@ -27,6 +28,7 @@
     <param name="get_height" value="$(arg get_height)" />
     <param name="use_local_transform" value="$(arg use_local_transform)" />
     <param name="output_log_data" value="$(arg output_log_data)" />
+    <param name="output_tf_frame_id" value="$(arg output_tf_frame_id)" />
     <param name="gnss_reinit_fitness" value="$(arg gnss_reinit_fitness)" />
     <remap from="/points_raw" to="/sync_drivers/points_raw" if="$(arg sync)" />
   </node>
