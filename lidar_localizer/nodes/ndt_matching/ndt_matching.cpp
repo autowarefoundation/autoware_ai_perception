@@ -314,7 +314,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setStepSize(ndt_res);
+      omp_ndt.setStepSize(step_size);
 #endif
   }
 
@@ -332,7 +332,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setTransformationEpsilon(ndt_res);
+      omp_ndt.setTransformationEpsilon(trans_eps);
 #endif
   }
 
@@ -350,7 +350,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setMaximumIterations(ndt_res);
+      omp_ndt.setMaximumIterations(max_iter);
 #endif
   }
 
