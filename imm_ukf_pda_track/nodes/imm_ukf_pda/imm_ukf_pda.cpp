@@ -25,7 +25,7 @@ ImmUkfPda::ImmUkfPda()
   has_subscribed_vectormap_(false),
   private_nh_("~")
 {
-  private_nh_.param<std::string>("tracking_frame", tracking_frame_, "world");
+  private_nh_.param<std::string>("tracking_frame", tracking_frame_, "map");
   private_nh_.param<int>("life_time_threshold", life_time_threshold_, 8);
   private_nh_.param<double>("gating_threshold", gating_threshold_, 9.22);
   private_nh_.param<double>("gate_probability", gate_probability_, 0.99);
@@ -54,8 +54,8 @@ ImmUkfPda::ImmUkfPda()
 
 void ImmUkfPda::run()
 {
-  pub_object_array_ = node_handle_.advertise<autoware_msgs::DetectedObjectArray>("/detection/objects", 1);
-  sub_detected_array_ = node_handle_.subscribe("/detection/fusion_tools/objects", 1, &ImmUkfPda::callback, this);
+  pub_object_array_ = node_handle_.advertise<autoware_msgs::DetectedObjectArray>("objects_out", 1);
+  sub_detected_array_ = node_handle_.subscribe("objects_in", 1, &ImmUkfPda::callback, this);
 
   if (use_vectormap_)
   {
