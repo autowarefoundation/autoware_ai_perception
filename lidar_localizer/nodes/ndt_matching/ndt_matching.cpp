@@ -1564,6 +1564,9 @@ int main(int argc, char** argv)
   nh.param("localizer", lidar_frame, std::string("lidar"));
   tf::TransformListener tf_listener;
   tf::StampedTransform tf_baselink2primarylidar;
+  bool received_tf = true;
+
+  // 1. Try getting base_link -> lidar TF from TF tree
   try
   {
     tf_listener.waitForTransform("base_link", lidar_frame, ros::Time(), ros::Duration(1.0));
@@ -1572,29 +1575,64 @@ int main(int argc, char** argv)
   catch (tf::TransformException& ex)
   {
     ROS_WARN("Query base_link to primary lidar frame through TF tree failed: %s", ex.what());
-    
-    // fall back to ros parameter for the transform
-    std::vector<double> bl2pl_vec;
-    if (!nh.getParam("tf_baselink2primarylidar", bl2pl_vec))
-    {
-      std::cout << "ros parameter tf_baselink2primarylidar is not set." << std::endl;
-      return 1;
-    }
-
-    // translation x, y, z, yaw, pitch, and roll
-    if (bl2pl_vec.size() != 6)
-    {
-      std::cout << "ros parameter tf_baselink2primarylidar is not valid." << std::endl;
-      return 1;
-    }
-    ROS_WARN("Query through ros parameter tf_baselink2primarylidar succeeded.");
-
-    tf::Vector3 trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
-    tf::Quaternion quat;
-    quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
-    tf_baselink2primarylidar.setOrigin(trans);
-    tf_baselink2primarylidar.setRotation(quat);
+    received_tf = false;
   }
+
+  // 2. Try getting base_link -> lidar TF from tf_baselink2primarylidar param
+  if (!received_tf)
+  {
+    std::vector<double> bl2pl_vec;
+    if (nh.getParam("tf_baselink2primarylidar", bl2pl_vec) && bl2pl_vec.size() == 6)
+    {
+      tf::Vector3 trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
+      tf::Quaternion quat;
+      quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
+      tf_baselink2primarylidar.setOrigin(trans);
+      tf_baselink2primarylidar.setRotation(quat);
+
+      received_tf = true;
+    }
+    else
+    {
+      ROS_WARN("Query base_link to primary lidar frame through tf_baselink2primarylidar param failed");
+    }
+  }
+
+  // 3. Try getting base_link -> lidar TF from tf_* params
+  if (!received_tf)
+  {
+    float tf_x, tf_y, tf_z, tf_roll, tf_pitch, tf_yaw;
+    if (nh.getParam("tf_x", tf_x) &&
+        nh.getParam("tf_y", tf_y) &&
+        nh.getParam("tf_z", tf_z) &&
+        nh.getParam("tf_roll", tf_roll) &&
+        nh.getParam("tf_pitch", tf_pitch) &&
+        nh.getParam("tf_yaw", tf_yaw))
+    {
+      tf::Vector3 trans(tf_x, tf_y, tf_z);
+      tf::Quaternion quat;
+      quat.setRPY(tf_roll, tf_pitch, tf_yaw);
+      tf_baselink2primarylidar.setOrigin(trans);
+      tf_baselink2primarylidar.setRotation(quat);
+
+      received_tf = true;
+    }
+    else
+    {
+      ROS_WARN("Query base_link to primary lidar frame through tf_* params failed");
+    }
+  }
+
+  if (received_tf)
+  {
+    ROS_INFO("base_link to primary lidar transform queried successfully");
+  }
+  else
+  {
+    ROS_ERROR("Failed to query base_link to primary lidar transform");
+    return 1;
+  }
+
   Eigen::Affine3d tf_affine;
   tf::transformTFToEigen(tf_baselink2primarylidar, tf_affine);
   tf_btol = tf_affine.matrix().cast<float>();
