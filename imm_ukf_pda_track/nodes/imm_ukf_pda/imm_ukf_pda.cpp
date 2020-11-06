@@ -54,8 +54,8 @@ ImmUkfPda::ImmUkfPda()
 
 void ImmUkfPda::run()
 {
-  pub_object_array_ = node_handle_.advertise<autoware_msgs::DetectedObjectArray>("objects", 1);
-  sub_detected_array_ = node_handle_.subscribe("/detection/objects", 1, &ImmUkfPda::callback, this);
+  pub_object_array_ = node_handle_.advertise<autoware_msgs::DetectedObjectArray>("objects_out", 1);
+  sub_detected_array_ = node_handle_.subscribe("objects_in", 1, &ImmUkfPda::callback, this);
 
   if (use_vectormap_)
   {

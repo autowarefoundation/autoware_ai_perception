@@ -83,8 +83,8 @@ void ImmUkfPdaLanelet2::run()
     }
   }
 
-  pub_object_array_ = nh_.advertise<autoware_msgs::DetectedObjectArray>("objects", 1);
-  sub_detected_array_ = nh_.subscribe("/detection/objects", 1, &ImmUkfPdaLanelet2::callback, this);
+  pub_object_array_ = nh_.advertise<autoware_msgs::DetectedObjectArray>("objects_out", 1);
+  sub_detected_array_ = nh_.subscribe("objects_in", 1, &ImmUkfPdaLanelet2::callback, this);
 }
 
 void ImmUkfPdaLanelet2::binMapCallback(const autoware_lanelet2_msgs::MapBin& msg)

@@ -23,8 +23,8 @@
   <arg name="nearest_lane_distance_threshold" default="1.0" />
 
   <group ns="$(arg namespace)">
-    <remap from="/detection/objects" to="$(arg tracker_input_topic)" />
-    <remap from="objects" to="$(arg tracker_output_topic)" />
+    <remap from="objects_in" to="$(arg tracker_input_topic)" />
+    <remap from="objects_out" to="$(arg tracker_output_topic)" />
 
     <!-- Tracker -->
     <node pkg="imm_ukf_pda_track" type="imm_ukf_pda_lanelet2" name="imm_ukf_pda_track" output="screen">
