@@ -1,0 +1,66 @@
+<!-- -->
+<launch>
+  <arg name="use_ll2" default="false"/>
+
+  <arg name="namespace" default="tracking"/>
+  <arg name="tracker_input_topic" default="/detection/objects" />
+  <arg name="tracker_output_topic" default="objects" />
+
+  <!-- General Args -->
+  <arg name="detection_probability" default="0.9" />
+  <arg name="gate_probability" default="0.99" />
+  <arg name="gating_threshold" default="9.22" />
+  <arg name="life_time_threshold" default="8" />
+  <arg name="merge_distance_threshold" default="0.5"/>
+  <arg name="prevent_explosion_threshold" default="1000" />
+  <arg name="static_num_history_threshold" default="3" />
+  <arg name="static_velocity_threshold" default="0.5" />
+  <arg name="tracking_frame" default="map" />
+  <arg name="use_sukf" default="false" />
+
+  <!-- Map Args -->
+  <arg name="use_map_info" default="false"/>
+  <arg name="map_frame" default="map" />
+  <arg name="lane_direction_chi_threshold" default="2.71" />
+  <arg name="nearest_lane_distance_threshold" default="1.0" />
+
+  <include if="$(arg use_ll2)" file="$(find imm_ukf_pda_track)/launch/imm_ukf_pda_track_lanelet2.launch">
+    <arg name="namespace" value="$(arg namespace)"/>
+    <arg name="tracker_input_topic" value="$(arg tracker_input_topic)" />
+    <arg name="tracker_output_topic" value="$(arg tracker_output_topic)" />
+    <arg name="detection_probability" value="$(arg detection_probability)" />
+    <arg name="gate_probability" value="$(arg gate_probability)" />
+    <arg name="gating_threshold" value="$(arg gating_threshold)" />
+    <arg name="life_time_threshold" value="$(arg life_time_threshold)" />
+    <arg name="merge_distance_threshold" value="$(arg merge_distance_threshold)" />
+    <arg name="prevent_explosion_threshold" value="$(arg prevent_explosion_threshold)" />
+    <arg name="static_num_history_threshold" value="$(arg static_num_history_threshold)" />
+    <arg name="static_velocity_threshold" value="$(arg static_velocity_threshold)" />
+    <arg name="tracking_frame" value="$(arg tracking_frame)" />
+    <arg name="use_sukf" value="$(arg use_sukf)" />
+    <arg name="use_map_info" value="$(arg use_map_info)" />
+    <arg name="map_frame" value="$(arg map_frame)" />
+    <arg name="lane_direction_chi_threshold" value="$(arg lane_direction_chi_threshold)" />
+    <arg name="nearest_lane_distance_threshold" value="$(arg nearest_lane_distance_threshold)" />
+  </include>
+
+  <include unless="$(arg use_ll2)" file="$(find imm_ukf_pda_track)/launch/imm_ukf_pda_track.launch">
+    <arg name="namespace" value="$(arg namespace)"/>
+    <arg name="tracker_input_topic" value="$(arg tracker_input_topic)" />
+    <arg name="tracker_output_topic" value="$(arg tracker_output_topic)" />
+    <arg name="detection_probability" value="$(arg detection_probability)" />
+    <arg name="gate_probability" value="$(arg gate_probability)" />
+    <arg name="gating_threshold" value="$(arg gating_threshold)" />
+    <arg name="life_time_threshold" value="$(arg life_time_threshold)" />
+    <arg name="merge_distance_threshold" value="$(arg merge_distance_threshold)" />
+    <arg name="prevent_explosion_threshold" value="$(arg prevent_explosion_threshold)" />
+    <arg name="static_num_history_threshold" value="$(arg static_num_history_threshold)" />
+    <arg name="static_velocity_threshold" value="$(arg static_velocity_threshold)" />
+    <arg name="tracking_frame" value="$(arg tracking_frame)" />
+    <arg name="use_sukf" value="$(arg use_sukf)" />
+    <arg name="use_map_info" value="$(arg use_map_info)" />
+    <arg name="map_frame" value="$(arg map_frame)" />
+    <arg name="lane_direction_chi_threshold" value="$(arg lane_direction_chi_threshold)" />
+    <arg name="nearest_lane_distance_threshold" value="$(arg nearest_lane_distance_threshold)" />
+  </include>
+</launch>

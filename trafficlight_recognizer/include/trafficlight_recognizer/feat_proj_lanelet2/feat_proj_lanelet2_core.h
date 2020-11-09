@@ -76,6 +76,8 @@ private:
 
   int adjust_proj_x_ = 0;
   int adjust_proj_y_ = 0;
+  float near_plane_ = 1.0;
+  float far_plane_ = 200.0;
 
   autoware_msgs::LaneArray waypoints_;
 

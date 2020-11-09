@@ -232,8 +232,8 @@ void LidarFakePerception::publishFakes()
 
   if (fake_points_.size() != 0)  // publish empty
   {
-    fake_points_.header.frame_id = pointcloud_frame_;
     fake_points_.header = pcl_conversions::toPCL(fake_object_.header);
+    fake_points_.header.frame_id = pointcloud_frame_;
   }
 
   if (publish_objects_)

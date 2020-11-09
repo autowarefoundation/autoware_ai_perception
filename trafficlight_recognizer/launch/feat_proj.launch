@@ -13,5 +13,5 @@
     <param name="roi_search_min_distance" value="$(arg roi_search_min_distance)"/>
     <param name="roi_search_max_distance" value="$(arg roi_search_max_distance)"/>
   </node>
-  
+
 </launch>

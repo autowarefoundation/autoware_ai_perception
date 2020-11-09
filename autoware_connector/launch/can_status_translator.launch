@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="autoware_connector" type="can_status_translator" name="can_status_translator" output="screen" />
+</launch>

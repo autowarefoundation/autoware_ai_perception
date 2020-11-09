@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <arg name="pose_stamped_topic" default="" />
+  <arg name="twist_stamped_topic" default="" />
+
+  <node pkg="topic_tools" type="relay" name="pose_relay" output="log" args="$(arg pose_stamped_topic) /current_pose"/>
+  <node pkg="topic_tools" type="relay" name="vel_relay" output="log" args="$(arg twist_stamped_topic) /current_velocity"/>
+</launch>

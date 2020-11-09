@@ -57,7 +57,6 @@ private:
   ros::Subscriber sub_pose_with_cov_;    //!< @brief measurement pose with covariance subscriber
   ros::Subscriber sub_twist_with_cov_;   //!< @brief measurement twist with covariance subscriber
   ros::Timer timer_control_;             //!< @brief time for ekf calculation callback
-  ros::Timer timer_tf_;                  //!< @brief timer to send transform
   tf2_ros::TransformBroadcaster tf_br_;  //!< @brief tf broadcaster
 
   TimeDelayKalmanFilter ekf_;  //!< @brief  extended kalman filter instance.
@@ -66,9 +65,9 @@ private:
   bool show_debug_info_;
   double ekf_rate_;                  //!< @brief  EKF predict rate
   double ekf_dt_;                    //!< @brief  = 1 / ekf_rate_
-  double tf_rate_;                   //!< @brief  tf publish rate
   bool enable_yaw_bias_estimation_;  //!< @brief  for LiDAR mount error. if true, publish /estimate_yaw_bias
   std::string pose_frame_id_;
+  std::string output_frame_id_;
 
   int dim_x_;              //!< @brief  dimension of EKF state
   int extend_state_step_;  //!< @brief  for time delay compensation
@@ -125,9 +124,9 @@ private:
   void timerCallback(const ros::TimerEvent& e);
 
   /**
-   * @brief publish tf for tf_rate [Hz]
+   * @brief publish tf
    */
-  void timerTFCallback(const ros::TimerEvent& e);
+  void broadcastTF();
 
   /**
    * @brief set pose measurement

@@ -190,18 +190,16 @@ static std::chrono::time_point<std::chrono::system_clock> matching_start, matchi
 static ros::Publisher time_ndt_matching_pub;
 static std_msgs::Float32 time_ndt_matching;
 
-static int _queue_size = 1000;
+static int _queue_size = 1;
 
 static ros::Publisher ndt_stat_pub;
 static autoware_msgs::NDTStat ndt_stat_msg;
 
 static double predict_pose_error = 0.0;
 
-static float _tf_x, _tf_y, _tf_z, _tf_roll, _tf_pitch, _tf_yaw;
-static std::vector<float> _tf_baselink2primarylidar;
+// hold transfrom from baselink to primary lidar
 static Eigen::Matrix4f tf_btol;
 
-static std::string _localizer = "velodyne";
 static std::string _offset = "linear";  // linear, zero, quadratic
 
 static ros::Publisher ndt_reliability_pub;
@@ -301,7 +299,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setStepSize(ndt_res);
+      omp_ndt.setStepSize(step_size);
 #endif
   }
 
@@ -319,7 +317,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setTransformationEpsilon(ndt_res);
+      omp_ndt.setTransformationEpsilon(trans_eps);
 #endif
   }
 
@@ -337,7 +335,7 @@ static void param_callback(const autoware_config_msgs::ConfigNDT::ConstPtr& inpu
 #endif
 #ifdef USE_PCL_OPENMP
     else if (_method_type == MethodType::PCL_OPENMP)
-      omp_ndt.setMaximumIterations(ndt_res);
+      omp_ndt.setMaximumIterations(max_iter);
 #endif
   }
 
@@ -829,10 +827,15 @@ static double calcDiffForRadian(const double lhs_rad, const double rhs_rad)
 
 static void odom_callback(const nav_msgs::Odometry::ConstPtr& input)
 {
-  // std::cout << __func__ << std::endl;
-
   odom = *input;
   odom_calc(input->header.stamp);
+}
+
+static void vehicle_twist_callback(const geometry_msgs::TwistStampedConstPtr& msg)
+{
+  odom.header = msg->header;
+  odom.twist.twist = msg->twist;
+  odom_calc(odom.header.stamp);
 }
 
 static void imuUpsideDown(const sensor_msgs::Imu::Ptr input)
@@ -1554,37 +1557,75 @@ int main(int argc, char** argv)
   tf2_ros::Buffer tf_buffer;
   tf2_ros::TransformListener tf_listener(tf_buffer);
   geometry_msgs::TransformStamped tf_baselink2primarylidar;
+  bool received_tf = true;
+
+  // 1. Try getting base_link -> lidar TF from TF tree
   try
   {
     tf_baselink2primarylidar =
-        tf_buffer.lookupTransform("base_link", lidar_frame, ros::Time().now(), ros::Duration(3.0));
+      tf_buffer.lookupTransform("base_link", lidar_frame, ros::Time().now(), ros::Duration(3.0));
   }
   catch (tf2::TransformException& ex)
   {
     ROS_WARN("Query base_link to primary lidar frame through TF tree failed: %s", ex.what());
-
-    // fall back to ros parameter for the transform
-    std::vector<double> bl2pl_vec;
-    if (!nh.getParam("tf_baselink2primarylidar", bl2pl_vec))
-    {
-      std::cout << "ros parameter tf_baselink2primarylidar is not set." << std::endl;
-      return 1;
-    }
-
-    // translation x, y, z, yaw, pitch, and roll
-    if (bl2pl_vec.size() != 6)
-    {
-      std::cout << "ros parameter tf_baselink2primarylidar is not valid." << std::endl;
-      return 1;
-    }
-    ROS_WARN("Query through ros parameter tf_baselink2primarylidar succeeded.");
-
-    tf2::Vector3 tf_trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
-    tf2::Quaternion tf_quat;
-    tf_quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
-    tf_baselink2primarylidar.transform.translation = tf2::toMsg(tf_trans);
-    tf_baselink2primarylidar.transform.rotation = tf2::toMsg(tf_quat);
+    received_tf = false;
   }
+
+  // 2. Try getting base_link -> lidar TF from tf_baselink2primarylidar param
+  if (!received_tf)
+  {
+    std::vector<double> bl2pl_vec;
+    if (nh.getParam("tf_baselink2primarylidar", bl2pl_vec) && bl2pl_vec.size() == 6)
+    {
+      tf2::Vector3 tf_trans(bl2pl_vec[0], bl2pl_vec[1], bl2pl_vec[2]);
+      tf2::Quaternion tf_quat;
+      tf_quat.setRPY(bl2pl_vec[5], bl2pl_vec[4], bl2pl_vec[3]);
+      tf_baselink2primarylidar.transform.translation = tf2::toMsg(tf_trans);
+      tf_baselink2primarylidar.transform.rotation = tf2::toMsg(tf_quat);
+
+      received_tf = true;
+    }
+    else
+    {
+      ROS_WARN("Query base_link to primary lidar frame through tf_baselink2primarylidar param failed");
+    }
+  }
+
+  // 3. Try getting base_link -> lidar TF from tf_* params
+  if (!received_tf)
+  {
+    float tf_x, tf_y, tf_z, tf_roll, tf_pitch, tf_yaw;
+    if (nh.getParam("tf_x", tf_x) &&
+        nh.getParam("tf_y", tf_y) &&
+        nh.getParam("tf_z", tf_z) &&
+        nh.getParam("tf_roll", tf_roll) &&
+        nh.getParam("tf_pitch", tf_pitch) &&
+        nh.getParam("tf_yaw", tf_yaw))
+    {
+      tf2::Vector3 tf_trans(tf_x, tf_y, tf_z);
+      tf2::Quaternion tf_quat;
+      tf_quat.setRPY(tf_roll, tf_pitch, tf_yaw);
+      tf_baselink2primarylidar.transform.translation = tf2::toMsg(tf_trans);
+      tf_baselink2primarylidar.transform.rotation = tf2::toMsg(tf_quat);
+
+      received_tf = true;
+    }
+    else
+    {
+      ROS_WARN("Query base_link to primary lidar frame through tf_* params failed");
+    }
+  }
+
+  if (received_tf)
+  {
+    ROS_INFO("base_link to primary lidar transform queried successfully");
+  }
+  else
+  {
+    ROS_ERROR("Failed to query base_link to primary lidar transform");
+    return 1;
+  }
+
   tf_btol = tf2::transformToEigen(tf_baselink2primarylidar).matrix().cast<float>();
 
   std::cout << "-----------------------------------------------------------------" << std::endl;
@@ -1599,10 +1640,9 @@ int main(int argc, char** argv)
   std::cout << "use_imu: " << _use_imu << std::endl;
   std::cout << "imu_upside_down: " << _imu_upside_down << std::endl;
   std::cout << "imu_topic: " << _imu_topic << std::endl;
-  std::cout << "localizer: " << _localizer << std::endl;
+  std::cout << "localizer: " << lidar_frame << std::endl;
   std::cout << "gnss_reinit_fitness: " << _gnss_reinit_fitness << std::endl;
-  std::cout << "(tf_x,tf_y,tf_z,tf_roll,tf_pitch,tf_yaw): (" << _tf_x << ", " << _tf_y << ", " << _tf_z << ", "
-            << _tf_roll << ", " << _tf_pitch << ", " << _tf_yaw << ")" << std::endl;
+  std::cout << "tf_baselink2primarylidar: \n" << tf_btol << std::endl;
   std::cout << "-----------------------------------------------------------------" << std::endl;
 
 #ifndef CUDA_FOUND
@@ -1623,12 +1663,6 @@ int main(int argc, char** argv)
     exit(1);
   }
 #endif
-
-  Eigen::Translation3f tl_btol(_tf_x, _tf_y, _tf_z);                 // tl: translation
-  Eigen::AngleAxisf rot_x_btol(_tf_roll, Eigen::Vector3f::UnitX());  // rot: rotation
-  Eigen::AngleAxisf rot_y_btol(_tf_pitch, Eigen::Vector3f::UnitY());
-  Eigen::AngleAxisf rot_z_btol(_tf_yaw, Eigen::Vector3f::UnitZ());
-  tf_btol = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
 
   // Updated in initialpose_callback or gnss_callback
   initial_pose.x = 0.0;
@@ -1660,8 +1694,9 @@ int main(int argc, char** argv)
   //  ros::Subscriber map_sub = nh.subscribe("points_map", 1, map_callback);
   ros::Subscriber initialpose_sub = nh.subscribe("initialpose", 10, initialpose_callback);
   ros::Subscriber points_sub = nh.subscribe("filtered_points", _queue_size, points_callback);
-  ros::Subscriber odom_sub = nh.subscribe("/vehicle/odom", _queue_size * 10, odom_callback);
+  ros::Subscriber odom_sub = nh.subscribe("vehicle/odom", _queue_size * 10, odom_callback);
   ros::Subscriber imu_sub = nh.subscribe(_imu_topic.c_str(), _queue_size * 10, imu_callback);
+  ros::Subscriber twist_sub = nh.subscribe("vehicle/twist", 10, vehicle_twist_callback);
 
   pthread_t thread;
   pthread_create(&thread, NULL, thread_func, NULL);
