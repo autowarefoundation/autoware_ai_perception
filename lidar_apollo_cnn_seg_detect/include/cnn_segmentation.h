@@ -35,8 +35,6 @@
 #include "cluster2d.h"
 #include "feature_generator.h"
 
-#define __APP_NAME__ "lidar_apollo_cnn_seg_detect"
-
 struct CellStat
 {
   CellStat() : point_num(0), valid_point_num(0)
