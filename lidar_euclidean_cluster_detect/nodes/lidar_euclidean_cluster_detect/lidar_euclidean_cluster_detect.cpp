@@ -307,7 +307,7 @@ void publishCentroids(const ros::Publisher *in_publisher, const autoware_msgs::C
     autoware_msgs::Centroids centroids_transformed;
     centroids_transformed.header = in_header;
     centroids_transformed.header.frame_id = in_target_frame;
-    for (auto i = centroids_transformed.points.begin(); i != centroids_transformed.points.end(); i++)
+    for (auto i = in_centroids.points.begin(); i != in_centroids.points.end(); i++)
     {
       geometry_msgs::PointStamped centroid_in, centroid_out;
       centroid_in.header = in_header;
