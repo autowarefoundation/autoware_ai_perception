@@ -785,7 +785,7 @@ static void points_callback(const sensor_msgs::PointCloud2::ConstPtr& input)
   }
 
   sensor_msgs::PointCloud2::Ptr map_msg_ptr(new sensor_msgs::PointCloud2);
-  pcl::toROSMsg(*map_ptr, *map_msg_ptr);
+  pcl::toROSMsg(*map, *map_msg_ptr);
   ndt_map_pub.publish(*map_msg_ptr);
 
   q.setRPY(current_pose.roll, current_pose.pitch, current_pose.yaw);
