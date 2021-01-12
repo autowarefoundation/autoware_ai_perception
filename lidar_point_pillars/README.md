@@ -2,15 +2,15 @@
 
 Autoware package for Point Pillars.  [Referenced paper](https://arxiv.org/abs/1812.05784).
 
-This node can be compiled either using CUDNN and TensorRT or by using TVM, the default are CUDNN and TensorRT.
+This node can be compiled either using cuDNN and TensorRT or by using TVM, the default are cuDNN and TensorRT.
 
 ## Requirements
 
 - CUDA Toolkit v9.0 or v10.0
 
-To compile the node using the CUDANN and TensorRT support the requirements are:
+To compile the node using the cuDNN and TensorRT support the requirements are:
 
-- CUDNN: Tested with v7.3.1
+- cuDNN: Tested with v7.3.1
 
 - TensorRT: Tested with 5.0.2 -> [How to install](https://docs.nvidia.com/deeplearning/sdk/tensorrt-install-guide/index.html#installing)
 
@@ -22,7 +22,7 @@ To compile the node using TVM support the requirements are:
 
 ## How to setup
 
-Setup the node using CUDANN and TensorRT support:
+Setup the node using cuDNN and TensorRT support:
 
 1. Download the pretrained file from [here](https://github.com/k0suke-murakami/kitti_pretrained_point_pillars).
 
@@ -36,13 +36,13 @@ Setup the node using TVM support:
 
 2. Use the TVM-CLI to export point pillars models to TVM (Instruction on how to do it are present in the repository ```modelzoo/scripts/tvm_cli/README.md```), models are ```perception/lidar_obstacle_detection/point_pillars_pfe/onnx_fp32_kitti``` and ```perception/lidar_obstacle_detection/point_pillars_rpn/onnx_fp32_kitti```
 
-3. Copy the generated files into the ```tvm_models/tvm_point_pillars_pfe``` and ```tvm_models/tvm_point_pillars_rpn``` folders respectively for each model.
+3. Copy the generated files into the ```tvm_models/tvm_point_pillars_pfe``` and ```tvm_models/tvm_point_pillars_rpn``` folders respectively for each model. With these files in place, the package will be built using TVM.
 
-4. Compile the node activating TVM support: ```colcon build --cmake-args -DTVM_AVAIL=ON --packages-up-to lidar_point_pillars```
+4. Compile the node.
 
 ## How to launch
 
-* Launch file (CUDANN and TensorRT support):
+* Launch file (cuDNN and TensorRT support):
 `roslaunch lidar_point_pillars lidar_point_pillars.launch pfe_onnx_file:=/PATH/TO/FILE.onnx rpn_onnx_file:=/PATH/TO/FILE.onnx input_topic:=/points_raw`
 
 * Launch file (TVM support):

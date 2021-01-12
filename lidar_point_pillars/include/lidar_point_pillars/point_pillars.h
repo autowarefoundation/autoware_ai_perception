@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2020 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2021 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,11 +35,9 @@
 
 #ifdef TVM_IMPLEMENTATION
   // headers in TVM
-  #include <tvm_utility/pipeline.hpp>
+  #include <tvm_utility/pipeline.h>
   #include "point_pillars_pfe/pfe_tvm_pipeline.h"
   #include "point_pillars_rpn/rpn_tvm_pipeline.h"
-
-  #include <ros/package.h>
 #else
   // headers in TensorRT
   #include "NvInfer.h"

@@ -55,9 +55,23 @@ else()
   set(CUDNN_AVAIL OFF)
 endif()
 
-# Check TVM utility, runtime libraries and TVM flag
-option(TVM_AVAIL "TVM implementation available" OFF)
+# Check TVM utility, runtime libraries and TVM files
 find_library(TVM_LIBRARY NAMES tvm_runtime)
+set(TVM_AVAIL OFF)
+
+set(TVM_PFE_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/tvm_models/tvm_point_pillars_pfe/)
+set(TVM_RPN_FOLDER ${CMAKE_CURRENT_SOURCE_DIR}/tvm_models/tvm_point_pillars_rpn/)
+
+if (EXISTS "${TVM_PFE_FOLDER}/deploy_graph.json"
+    AND EXISTS "${TVM_PFE_FOLDER}/deploy_param.params"
+    AND EXISTS "${TVM_PFE_FOLDER}/deploy_lib.so"
+    AND EXISTS "${TVM_PFE_FOLDER}/inference_engine_tvm_config.hpp"
+    AND EXISTS "${TVM_RPN_FOLDER}/deploy_graph.json"
+    AND EXISTS "${TVM_RPN_FOLDER}/deploy_param.params"
+    AND EXISTS "${TVM_RPN_FOLDER}/deploy_lib.so"
+    AND EXISTS "${TVM_RPN_FOLDER}/inference_engine_tvm_config.hpp")
+  set(TVM_AVAIL true)
+endif()
 
 if(CUDA_AVAIL AND ((TRT_AVAIL AND CUDNN_AVAIL) OR (TVM_AVAIL AND TVM_LIBRARY)))
   find_package(catkin REQUIRED COMPONENTS
@@ -73,8 +87,8 @@ if(CUDA_AVAIL AND ((TRT_AVAIL AND CUDNN_AVAIL) OR (TVM_AVAIL AND TVM_LIBRARY)))
       pcl_ros
       autoware_msgs
   )
-  set(CMAKE_CXX_STANDARD 11)
-  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+  set(CMAKE_CXX_STANDARD 14)
+  set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 
   # Look for tvm_utility if this build is using TVM model
   if(TVM_AVAIL)
