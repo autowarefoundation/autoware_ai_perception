@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2021 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,8 +17,8 @@
 /**
 * @file point_pillars.h
 * @brief Algorithm for PointPillars
-* @author Kosuke Murakami
-* @date 2019/02/26
+* @author Kosuke Murakami, Luca Fancellu
+* @date 2020/09/04
 */
 
 #ifndef POINTS_PILLAR_H
@@ -33,9 +33,16 @@
 #include <algorithm>
 #include <limits>
 
-// headers in TensorRT
-#include "NvInfer.h"
-#include "NvOnnxParser.h"
+#ifdef TVM_IMPLEMENTATION
+  // headers in TVM
+  #include <tvm_utility/pipeline.h>
+  #include "point_pillars_pfe/pfe_tvm_pipeline.h"
+  #include "point_pillars_rpn/rpn_tvm_pipeline.h"
+#else
+  // headers in TensorRT
+  #include "NvInfer.h"
+  #include "NvOnnxParser.h"
+#endif
 
 // headers in local files
 #include "lidar_point_pillars/common.h"
@@ -45,43 +52,45 @@
 #include "lidar_point_pillars/scatter_cuda.h"
 #include "lidar_point_pillars/postprocess_cuda.h"
 
-// Logger for TensorRT info/warning/errors
-class Logger : public nvinfer1::ILogger
-{
-public:
-  Logger(Severity severity = Severity::kWARNING) : reportableSeverity(severity)
+#ifndef TVM_IMPLEMENTATION
+  // Logger for TensorRT info/warning/errors
+  class Logger : public nvinfer1::ILogger
   {
-  }
-
-  void log(Severity severity, const char* msg) override
-  {
-    // suppress messages with severity enum value greater than the reportable
-    if (severity > reportableSeverity)
-      return;
-
-    switch (severity)
+  public:
+    Logger(Severity severity = Severity::kWARNING) : reportableSeverity(severity)
     {
-      case Severity::kINTERNAL_ERROR:
-        std::cerr << "INTERNAL_ERROR: ";
-        break;
-      case Severity::kERROR:
-        std::cerr << "ERROR: ";
-        break;
-      case Severity::kWARNING:
-        std::cerr << "WARNING: ";
-        break;
-      case Severity::kINFO:
-        std::cerr << "INFO: ";
-        break;
-      default:
-        std::cerr << "UNKNOWN: ";
-        break;
     }
-    std::cerr << msg << std::endl;
-  }
 
-  Severity reportableSeverity;
-};
+    void log(Severity severity, const char* msg) override
+    {
+      // suppress messages with severity enum value greater than the reportable
+      if (severity > reportableSeverity)
+        return;
+
+      switch (severity)
+      {
+        case Severity::kINTERNAL_ERROR:
+          std::cerr << "INTERNAL_ERROR: ";
+          break;
+        case Severity::kERROR:
+          std::cerr << "ERROR: ";
+          break;
+        case Severity::kWARNING:
+          std::cerr << "WARNING: ";
+          break;
+        case Severity::kINFO:
+          std::cerr << "INFO: ";
+          break;
+        default:
+          std::cerr << "UNKNOWN: ";
+          break;
+      }
+      std::cerr << msg << std::endl;
+    }
+
+    Severity reportableSeverity;
+  };
+#endif
 
 class PointPillars
 {
@@ -171,8 +180,18 @@ private:
   float* dev_box_anchors_max_y_;
   int* dev_anchor_mask_;
 
-  void* pfe_buffers_[9];
-  void* rpn_buffers_[4];
+  #ifdef TVM_IMPLEMENTATION
+    void* pfe_net_output;
+    void* rpn_buffers_[3];
+
+    std::vector<float*> pfe_net_input_;
+    std::vector<float*> rpn_net_input_;
+  #else
+    void* pfe_buffers_[9];
+    void* rpn_buffers_[4];
+  #endif
+
+  cudaStream_t stream_;
 
   float* dev_scattered_feature_;
 
@@ -195,13 +214,23 @@ private:
   std::unique_ptr<ScatterCuda> scatter_cuda_ptr_;
   std::unique_ptr<PostprocessCuda> postprocess_cuda_ptr_;
 
-  Logger g_logger_;
-  nvinfer1::IExecutionContext* pfe_context_;
-  nvinfer1::IExecutionContext* rpn_context_;
-  nvinfer1::IRuntime* pfe_runtime_;
-  nvinfer1::IRuntime* rpn_runtime_;
-  nvinfer1::ICudaEngine* pfe_engine_;
-  nvinfer1::ICudaEngine* rpn_engine_;
+  #ifdef TVM_IMPLEMENTATION
+    std::unique_ptr<tvm_utility::pipeline::Pipeline<PreProcessorPFE,
+                          tvm_utility::pipeline::InferenceEngineTVM,
+                          PostProcessorPFE>> pfe_engine_ptr_;
+
+    std::unique_ptr<tvm_utility::pipeline::Pipeline<PreProcessorRPN,
+                          tvm_utility::pipeline::InferenceEngineTVM,
+                          PostProcessorRPN>> rpn_engine_ptr_;
+  #else
+    Logger g_logger_;
+    nvinfer1::IExecutionContext* pfe_context_;
+    nvinfer1::IExecutionContext* rpn_context_;
+    nvinfer1::IRuntime* pfe_runtime_;
+    nvinfer1::IRuntime* rpn_runtime_;
+    nvinfer1::ICudaEngine* pfe_engine_;
+    nvinfer1::ICudaEngine* rpn_engine_;
+  #endif
 
   /**
   * @brief Memory allocation for device memory
@@ -216,10 +245,10 @@ private:
   void initAnchors();
 
   /**
-  * @brief Initializing TensorRT instances
+  * @brief Initializing TensorRT/TVM instances
   * @details Called in the constructor
   */
-  void initTRT();
+  void initEngine();
 
   /**
   * @brief Generate anchors
@@ -235,6 +264,7 @@ private:
   void generateAnchors(float* anchors_px_, float* anchors_py_, float* anchors_pz_, float* anchors_dx_,
                        float* anchors_dy_, float* anchors_dz_, float* anchors_ro_);
 
+#ifndef TVM_IMPLEMENTATION
   /**
   * @brief Convert ONNX to TensorRT model
   * @param[in] model_file ONNX model file path
@@ -242,6 +272,7 @@ private:
   * @details Load ONNX model, and convert it to TensorRT model
   */
   void onnxToTRTModel(const std::string& model_file, nvinfer1::IHostMemory*& trt_model_stream);
+#endif
 
   /**
   * @brief Preproces points

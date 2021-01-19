@@ -1,0 +1,79 @@
+{
+  "nodes": [
+    {
+      "op": "null", 
+      "name": "input", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "p0", 
+      "inputs": []
+    }, 
+    {
+      "op": "null", 
+      "name": "p1", 
+      "inputs": []
+    }, 
+    {
+      "op": "tvm_op", 
+      "name": "fused_multiply_add", 
+      "attrs": {
+        "num_outputs": "1", 
+        "num_inputs": "3", 
+        "func_name": "fused_multiply_add", 
+        "flatten_data": "0"
+      }, 
+      "inputs": [
+        [
+          0, 
+          0, 
+          0
+        ], 
+        [
+          1, 
+          0, 
+          0
+        ], 
+        [
+          2, 
+          0, 
+          0
+        ]
+      ]
+    }
+  ], 
+  "arg_nodes": [0, 1, 2], 
+  "heads": [
+    [
+      3, 
+      0, 
+      0
+    ]
+  ], 
+  "attrs": {
+    "dltype": [
+      "list_str", 
+      [
+        "float32", 
+        "float32", 
+        "float32", 
+        "float32"
+      ]
+    ], 
+    "shape": [
+      "list_shape", 
+      [
+        [10, 6, 224, 224], 
+        [6, 1, 1], 
+        [6, 1, 1], 
+        [10, 6, 224, 224]
+      ]
+    ], 
+    "storage_id": [
+      "list_int", 
+      [0, 1, 2, 3]
+    ]
+  }, 
+  "node_row_ptr": [0, 1, 2, 3, 4]
+}

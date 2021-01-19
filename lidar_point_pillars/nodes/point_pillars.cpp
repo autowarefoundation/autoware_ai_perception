@@ -1,5 +1,5 @@
 /*
- * Copyright 2018-2019 Autoware Foundation. All rights reserved.
+ * Copyright 2018-2020 Autoware Foundation. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,6 +21,15 @@
 // headers in local files
 #include "lidar_point_pillars/point_pillars.h"
 
+#ifdef TVM_IMPLEMENTATION
+  #include "tvm_point_pillars_pfe/inference_engine_tvm_config.hpp"
+  #include "tvm_point_pillars_rpn/inference_engine_tvm_config.hpp"
+
+  namespace pfe_model_cfg = model_zoo::perception::lidar_obstacle_detection::
+      point_pillars_pfe::onnx_fp32_kitti;
+  namespace rpn_model_cfg = model_zoo::perception::lidar_obstacle_detection::
+      point_pillars_rpn::onnx_fp32_kitti;
+#endif
 // clang-format off
 PointPillars::PointPillars(const bool reproduce_result_mode, const float score_threshold,
                            const float nms_overlap_threshold, const std::string pfe_onnx_file,
@@ -90,7 +99,7 @@ PointPillars::PointPillars(const bool reproduce_result_mode, const float score_t
                                                   nms_overlap_threshold_, NUM_BOX_CORNERS_, NUM_OUTPUT_BOX_FEATURE_));
 
   deviceMemoryMalloc();
-  initTRT();
+  initEngine();
   initAnchors();
 }
 // clang-format on
@@ -138,6 +147,13 @@ PointPillars::~PointPillars()
   GPU_CHECK(cudaFree(dev_box_anchors_max_y_));
   GPU_CHECK(cudaFree(dev_anchor_mask_));
 
+#ifdef TVM_IMPLEMENTATION
+  GPU_CHECK(cudaFree(pfe_net_output));
+
+  GPU_CHECK(cudaFree(rpn_buffers_[0]));
+  GPU_CHECK(cudaFree(rpn_buffers_[1]));
+  GPU_CHECK(cudaFree(rpn_buffers_[2]));
+#else
   GPU_CHECK(cudaFree(pfe_buffers_[0]));
   GPU_CHECK(cudaFree(pfe_buffers_[1]));
   GPU_CHECK(cudaFree(pfe_buffers_[2]));
@@ -152,6 +168,7 @@ PointPillars::~PointPillars()
   GPU_CHECK(cudaFree(rpn_buffers_[1]));
   GPU_CHECK(cudaFree(rpn_buffers_[2]));
   GPU_CHECK(cudaFree(rpn_buffers_[3]));
+#endif
 
   GPU_CHECK(cudaFree(dev_scattered_feature_));
 
@@ -168,6 +185,7 @@ PointPillars::~PointPillars()
   GPU_CHECK(cudaFree(dev_box_for_nms_));
   GPU_CHECK(cudaFree(dev_filter_count_));
 
+#ifndef TVM_IMPLEMENTATION
   pfe_context_->destroy();
   rpn_context_->destroy();
 
@@ -175,6 +193,7 @@ PointPillars::~PointPillars()
   rpn_runtime_->destroy();
   pfe_engine_->destroy();
   rpn_engine_->destroy();
+#endif
 }
 
 void PointPillars::deviceMemoryMalloc()
@@ -216,6 +235,13 @@ void PointPillars::deviceMemoryMalloc()
 
   // for trt inference
   // create GPU buffers and a stream
+#ifdef TVM_IMPLEMENTATION
+  GPU_CHECK(cudaMalloc(&pfe_net_output, PFE_OUTPUT_SIZE_ * sizeof(float)));
+
+  GPU_CHECK(cudaMalloc(&rpn_buffers_[0], RPN_BOX_OUTPUT_SIZE_ * sizeof(float)));
+  GPU_CHECK(cudaMalloc(&rpn_buffers_[1], RPN_CLS_OUTPUT_SIZE_ * sizeof(float)));
+  GPU_CHECK(cudaMalloc(&rpn_buffers_[2], RPN_DIR_OUTPUT_SIZE_ * sizeof(float)));
+#else
   GPU_CHECK(cudaMalloc(&pfe_buffers_[0], MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float)));
   GPU_CHECK(cudaMalloc(&pfe_buffers_[1], MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float)));
   GPU_CHECK(cudaMalloc(&pfe_buffers_[2], MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float)));
@@ -230,6 +256,7 @@ void PointPillars::deviceMemoryMalloc()
   GPU_CHECK(cudaMalloc(&rpn_buffers_[1], RPN_BOX_OUTPUT_SIZE_ * sizeof(float)));
   GPU_CHECK(cudaMalloc(&rpn_buffers_[2], RPN_CLS_OUTPUT_SIZE_ * sizeof(float)));
   GPU_CHECK(cudaMalloc(&rpn_buffers_[3], RPN_DIR_OUTPUT_SIZE_ * sizeof(float)));
+#endif
 
   // for scatter kernel
   GPU_CHECK(cudaMalloc((void**)&dev_scattered_feature_, NUM_THREADS_ * GRID_Y_SIZE_ * GRID_X_SIZE_ * sizeof(float)));
@@ -382,8 +409,55 @@ void PointPillars::convertAnchors2BoxAnchors(float* anchors_px, float* anchors_p
   }
 }
 
-void PointPillars::initTRT()
+void PointPillars::initEngine()
 {
+#ifdef TVM_IMPLEMENTATION
+  // Load TVM models
+  tvm_utility::pipeline::InferenceEngineTVMConfig pfe_config = pfe_model_cfg::config;
+  tvm_utility::pipeline::InferenceEngineTVMConfig rpn_config = rpn_model_cfg::config;
+
+  pfe_config.network_module_path = pfe_onnx_file_ +
+      pfe_config.network_module_path;
+  pfe_config.network_graph_path = pfe_onnx_file_ +
+      pfe_config.network_graph_path;
+  pfe_config.network_params_path = pfe_onnx_file_ +
+      pfe_config.network_params_path;
+
+  rpn_config.network_module_path = rpn_onnx_file_ +
+    rpn_config.network_module_path;
+  rpn_config.network_graph_path = rpn_onnx_file_ +
+      rpn_config.network_graph_path;
+  rpn_config.network_params_path = rpn_onnx_file_ +
+      rpn_config.network_params_path;
+
+  pfe_engine_ptr_.reset(new tvm_utility::pipeline::Pipeline<PreProcessorPFE,
+                        tvm_utility::pipeline::InferenceEngineTVM,
+                        PostProcessorPFE>(
+      PreProcessorPFE(pfe_config, &stream_),
+      tvm_utility::pipeline::InferenceEngineTVM(pfe_config),
+      PostProcessorPFE(pfe_config)
+    )
+  );
+  rpn_engine_ptr_.reset(new tvm_utility::pipeline::Pipeline<PreProcessorRPN,
+                        tvm_utility::pipeline::InferenceEngineTVM,
+                        PostProcessorRPN>(
+      PreProcessorRPN(rpn_config, &stream_),
+      tvm_utility::pipeline::InferenceEngineTVM(rpn_config),
+      PostProcessorRPN(rpn_config)
+    )
+  );
+
+  pfe_net_input_.push_back(dev_pillar_x_);
+  pfe_net_input_.push_back(dev_pillar_y_);
+  pfe_net_input_.push_back(dev_pillar_z_);
+  pfe_net_input_.push_back(dev_pillar_i_);
+  pfe_net_input_.push_back(dev_num_points_per_pillar_);
+  pfe_net_input_.push_back(dev_x_coors_for_sub_shaped_);
+  pfe_net_input_.push_back(dev_y_coors_for_sub_shaped_);
+  pfe_net_input_.push_back(dev_pillar_feature_mask_);
+
+  rpn_net_input_.push_back(dev_scattered_feature_);
+#else
   // create a TensorRT model from the onnx model and serialize it to a stream
   nvinfer1::IHostMemory* pfe_trt_model_stream{ nullptr };
   nvinfer1::IHostMemory* rpn_trt_model_stream{ nullptr };
@@ -417,8 +491,10 @@ void PointPillars::initTRT()
   {
     std::cerr << "Failed to create TensorRT Execution Context." << std::endl;;
   }
+#endif
 }
 
+#ifndef TVM_IMPLEMENTATION
 void PointPillars::onnxToTRTModel(const std::string& model_file,             // name of the onnx model
                                   nvinfer1::IHostMemory*& trt_model_stream)  // output buffer for the TensorRT model
 {
@@ -451,6 +527,7 @@ void PointPillars::onnxToTRTModel(const std::string& model_file,             // 
   network->destroy();
   builder->destroy();
 }
+#endif
 
 void PointPillars::preprocessCPU(const float* in_points_array, const int in_num_points)
 {
@@ -554,34 +631,85 @@ void PointPillars::doInference(const float* in_points_array, const int in_num_po
                                           dev_box_anchors_min_x_, dev_box_anchors_min_y_, dev_box_anchors_max_x_,
                                           dev_box_anchors_max_y_, dev_anchor_mask_);
 
-  cudaStream_t stream;
-  GPU_CHECK(cudaStreamCreate(&stream));
+  GPU_CHECK(cudaStreamCreate(&stream_));
+
+#ifdef TVM_IMPLEMENTATION
+  std::vector<float> pfe_out = pfe_engine_ptr_->schedule(pfe_net_input_);
+
+  // Copy from Host to device the PFE net result
+  GPU_CHECK(cudaMemcpyAsync(pfe_net_output,
+                          pfe_out.data(),
+                          PFE_OUTPUT_SIZE_ * sizeof(float),
+                          cudaMemcpyHostToDevice,
+                          stream_));
+#else
   // clang-format off
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[0], dev_pillar_x_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[1], dev_pillar_y_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[2], dev_pillar_z_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[3], dev_pillar_i_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[4], dev_num_points_per_pillar_, MAX_NUM_PILLARS_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[5], dev_x_coors_for_sub_shaped_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[6], dev_y_coors_for_sub_shaped_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
-  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[7], dev_pillar_feature_mask_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[0], dev_pillar_x_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[1], dev_pillar_y_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[2], dev_pillar_z_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[3], dev_pillar_i_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[4], dev_num_points_per_pillar_, MAX_NUM_PILLARS_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[5], dev_x_coors_for_sub_shaped_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[6], dev_y_coors_for_sub_shaped_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(pfe_buffers_[7], dev_pillar_feature_mask_, MAX_NUM_PILLARS_ * MAX_NUM_POINTS_PER_PILLAR_ * sizeof(float), cudaMemcpyDeviceToDevice, stream_));
   // clang-format on
-  pfe_context_->enqueue(BATCH_SIZE_, pfe_buffers_, stream, nullptr);
+  pfe_context_->enqueue(BATCH_SIZE_, pfe_buffers_, stream_, nullptr);
+#endif
 
   GPU_CHECK(cudaMemset(dev_scattered_feature_, 0, RPN_INPUT_SIZE_ * sizeof(float)));
+
+#ifdef TVM_IMPLEMENTATION
+  scatter_cuda_ptr_->doScatterCuda(host_pillar_count_[0], dev_x_coors_,
+                                    dev_y_coors_, (float*)pfe_net_output,
+                                    dev_scattered_feature_);
+
+  // Infer from RPN engine
+  RPN_Net_Output rpn_out = rpn_engine_ptr_->schedule(rpn_net_input_);
+
+  // Copy output from RPN engine to gpu device memory
+  GPU_CHECK(cudaMemcpyAsync(rpn_buffers_[0], rpn_out.box_output.data(),
+                          rpn_out.box_output.size() * sizeof(float),
+                          cudaMemcpyHostToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(rpn_buffers_[1], rpn_out.cls_output.data(),
+                          rpn_out.cls_output.size() * sizeof(float),
+                          cudaMemcpyHostToDevice, stream_));
+  GPU_CHECK(cudaMemcpyAsync(rpn_buffers_[2], rpn_out.dir_output.data(),
+                          rpn_out.dir_output.size() * sizeof(float),
+                          cudaMemcpyHostToDevice, stream_));
+
+  GPU_CHECK(cudaMemset(dev_filter_count_, 0, sizeof(int)));
+  postprocess_cuda_ptr_->doPostprocessCuda((float*)rpn_buffers_[0],
+                                           (float*)rpn_buffers_[1],
+                                           (float*)rpn_buffers_[2],
+                                           dev_anchor_mask_,
+                                           dev_anchors_px_,
+                                           dev_anchors_py_,
+                                           dev_anchors_pz_,
+                                           dev_anchors_dx_,
+                                           dev_anchors_dy_,
+                                           dev_anchors_dz_,
+                                           dev_anchors_ro_,
+                                           dev_filtered_box_,
+                                           dev_filtered_score_,
+                                           dev_filtered_dir_,
+                                           dev_box_for_nms_,
+                                           dev_filter_count_,
+                                           out_detections);
+#else
   scatter_cuda_ptr_->doScatterCuda(host_pillar_count_[0], dev_x_coors_, dev_y_coors_, (float*)pfe_buffers_[8],
                                    dev_scattered_feature_);
 
   GPU_CHECK(cudaMemcpyAsync(rpn_buffers_[0], dev_scattered_feature_, BATCH_SIZE_ * RPN_INPUT_SIZE_ * sizeof(float),
-                            cudaMemcpyDeviceToDevice, stream));
-  rpn_context_->enqueue(BATCH_SIZE_, rpn_buffers_, stream, nullptr);
+                            cudaMemcpyDeviceToDevice, stream_));
+  rpn_context_->enqueue(BATCH_SIZE_, rpn_buffers_, stream_, nullptr);
 
   GPU_CHECK(cudaMemset(dev_filter_count_, 0, sizeof(int)));
   postprocess_cuda_ptr_->doPostprocessCuda(
       (float*)rpn_buffers_[1], (float*)rpn_buffers_[2], (float*)rpn_buffers_[3], dev_anchor_mask_, dev_anchors_px_,
       dev_anchors_py_, dev_anchors_pz_, dev_anchors_dx_, dev_anchors_dy_, dev_anchors_dz_, dev_anchors_ro_,
       dev_filtered_box_, dev_filtered_score_, dev_filtered_dir_, dev_box_for_nms_, dev_filter_count_, out_detections);
+#endif
 
   // release the stream and the buffers
-  cudaStreamDestroy(stream);
+  cudaStreamDestroy(stream_);
 }
