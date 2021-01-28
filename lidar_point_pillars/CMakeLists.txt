@@ -93,12 +93,13 @@ if(CUDA_AVAIL AND ((TRT_AVAIL AND CUDNN_AVAIL) OR (TVM_AVAIL AND TVM_LIBRARY)))
   # Look for tvm_utility if this build is using TVM model
   if(TVM_AVAIL)
     find_package(catkin REQUIRED COMPONENTS
+      tvm_vendor
       tvm_utility
     )
     set(CMAKE_CXX_STANDARD_REQUIRED ON)
     set(CMAKE_CXX_EXTENSIONS OFF)
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DTVM_IMPLEMENTATION")
-    include_directories(tvm_models)
+    include_directories(tvm_models ${tvm_vendor_INCLUDE_DIRS}/tvm_vendor)
   endif()
 
   include_directories(
@@ -141,7 +142,7 @@ if(CUDA_AVAIL AND ((TRT_AVAIL AND CUDNN_AVAIL) OR (TVM_AVAIL AND TVM_LIBRARY)))
     )
 
     target_link_libraries(point_pillars_lib
-      tvm_runtime
+      ${TVM_LIBRARY}
       ${CUDA_LIBRARIES}
       ${CUDA_CUBLAS_LIBRARIES}
       ${CUDA_curand_LIBRARY}
