@@ -103,7 +103,15 @@ void RayGroundFilter::filterROSMsg(const sensor_msgs::PointCloud2ConstPtr in_ori
                    const std::vector<void*>& in_selector,
                    const sensor_msgs::PointCloud2::Ptr out_filtered_msg)
 {
-  size_t point_size = in_origin_cloud->row_step/in_origin_cloud->width;  // in Byte
+  size_t point_size = 0;
+  if (in_origin_cloud->width == 0)
+  {
+    ROS_WARN_THROTTLE(5, "Cloud width of zero, nothing to process");
+  }
+  else
+  {
+    size_t point_size = in_origin_cloud->row_step/in_origin_cloud->width;  // in Byte
+  }
 
   // TODO(yoan picchi) I fear this may do a lot of cache miss because it is sorted in the radius
   // and no longer sorted in the original pointer. One thing to try is that, given
