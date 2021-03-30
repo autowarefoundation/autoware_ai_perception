@@ -110,7 +110,7 @@ void RayGroundFilter::filterROSMsg(const sensor_msgs::PointCloud2ConstPtr in_ori
   }
   else
   {
-    size_t point_size = in_origin_cloud->row_step/in_origin_cloud->width;  // in Byte
+    point_size = in_origin_cloud->row_step/in_origin_cloud->width;  // in Byte
   }
 
   // TODO(yoan picchi) I fear this may do a lot of cache miss because it is sorted in the radius
