@@ -1014,11 +1014,10 @@ int main(int argc, char** argv)
       ROS_WARN("Query base_link to primary lidar frame through tf_baselink2primarylidar param failed");
     }
   }
-
+  double tf_x, tf_y, tf_z, tf_roll, tf_pitch, tf_yaw;
   // 3. Try getting base_link -> lidar TF from tf_* params
   if (!received_tf)
   {
-    float tf_x, tf_y, tf_z, tf_roll, tf_pitch, tf_yaw;
     if (nh.getParam("tf_x", tf_x) &&
         nh.getParam("tf_y", tf_y) &&
         nh.getParam("tf_z", tf_z) &&
@@ -1031,7 +1030,6 @@ int main(int argc, char** argv)
       quat.setRPY(tf_roll, tf_pitch, tf_yaw);
       tf_baselink2primarylidar.setOrigin(trans);
       tf_baselink2primarylidar.setRotation(quat);
-
       received_tf = true;
     }
     else
@@ -1039,10 +1037,22 @@ int main(int argc, char** argv)
       ROS_WARN("Query base_link to primary lidar frame through tf_* params failed");
     }
   }
-
   if (received_tf)
   {
     ROS_INFO("base_link to primary lidar transform queried successfully");
+    
+    tf_baselink2primarylidar.getOrigin();
+    tf_x = tf_baselink2primarylidar.getOrigin().getX();
+    tf_y = tf_baselink2primarylidar.getOrigin().getY();
+    tf_z = tf_baselink2primarylidar.getOrigin().getZ();
+    Eigen::Translation3f tl_btol(tf_x, tf_y, tf_z);// tl: translation
+
+    tf::Matrix3x3(tf_baselink2primarylidar.getRotation()).getRPY( tf_roll, tf_pitch,tf_yaw);
+    Eigen::AngleAxisf rot_x_btol(tf_roll, Eigen::Vector3f::UnitX());  // rot: rotation
+    Eigen::AngleAxisf rot_y_btol(tf_pitch, Eigen::Vector3f::UnitY());
+    Eigen::AngleAxisf rot_z_btol(tf_yaw, Eigen::Vector3f::UnitZ());
+    tf_btol = (tl_btol * rot_z_btol * rot_y_btol * rot_x_btol).matrix();
+    tf_ltob = tf_btol.inverse();
   }
   else
   {
