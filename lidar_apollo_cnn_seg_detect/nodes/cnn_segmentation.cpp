@@ -15,7 +15,7 @@
  */
 
 #include "cnn_segmentation.h"
-
+#define __APP_NAME__ "cnn_segmentation"
 CNNSegmentation::CNNSegmentation() : nh_()
 {
 }
