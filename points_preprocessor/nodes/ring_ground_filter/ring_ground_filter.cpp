@@ -154,7 +154,7 @@ void GroundFilter::InitRadiusTable(int in_model)
       b = max_slope_*M_PI/180;
       for (int i = 0; i < 32; i++)
       {
-        theta = (-31.0/3 + (4.0/3)*i)*180/M_PI;
+        theta = (-31.0/3 + (4.0/3)*i)*M_PI/180;
         radius_table_[i] = fabs(sensor_height_*(1.0/(tan(theta)+tan(b)) - 1.0/(tan(a+theta)+tan(b))));
       }
       break;
@@ -163,7 +163,7 @@ void GroundFilter::InitRadiusTable(int in_model)
       b = max_slope_*M_PI/180;
       for (int i = 0; i < 16; i++)
       {
-        theta = (-30.0/2 + (2.0)*i)*180/M_PI;
+        theta = (-30.0/2 + (2.0)*i)*M_PI/180;
         radius_table_[i] = fabs(sensor_height_*(1.0/(tan(theta)+tan(b)) - 1.0/(tan(a+theta)+tan(b))));
       }
       break;
