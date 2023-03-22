@@ -92,29 +92,23 @@ void ROSPixelCloudFusionApp::CloudCallback(const sensor_msgs::PointCloud2::Const
 
   out_cloud->points.clear();
 
-#pragma omp for
-  for (int row = 0; row < image_size_.height; row++)
-  {
-    for (int col = 0; col < image_size_.width; col++)
-    {
-      std::unordered_map<cv::Point, pcl::PointXYZ>::const_iterator iterator_3d_2d;
-      pcl::PointXYZ corresponding_3d_point;
-      pcl::PointXYZRGB colored_3d_point;
-      iterator_3d_2d = projection_map.find(cv::Point(col, row));
-      if (iterator_3d_2d != projection_map.end())
-      {
-        corresponding_3d_point = iterator_3d_2d->second;
-        cv::Vec3b rgb_pixel = current_frame_.at<cv::Vec3b>(row, col);
-        colored_3d_point.x = corresponding_3d_point.x;
-        colored_3d_point.y = corresponding_3d_point.y;
-        colored_3d_point.z = corresponding_3d_point.z;
-        colored_3d_point.r = rgb_pixel[2];
-        colored_3d_point.g = rgb_pixel[1];
-        colored_3d_point.b = rgb_pixel[0];
-        out_cloud->points.push_back(colored_3d_point);
-      }
-    }
+  for(const auto& pixel_point_pair: projection_map){
+
+    pcl::PointXYZ corresponding_3d_point;
+    pcl::PointXYZRGB colored_3d_point;
+
+    corresponding_3d_point = pixel_point_pair.second;
+    cv::Vec3b rgb_pixel = current_frame_.at<cv::Vec3b>(pixel_point_pair.first);
+    colored_3d_point.x = corresponding_3d_point.x;
+    colored_3d_point.y = corresponding_3d_point.y;
+    colored_3d_point.z = corresponding_3d_point.z;
+    colored_3d_point.r = rgb_pixel[2];
+    colored_3d_point.g = rgb_pixel[1];
+    colored_3d_point.b = rgb_pixel[0];
+    out_cloud->points.push_back(colored_3d_point);
+  
   }
+  
   // Publish PC
   sensor_msgs::PointCloud2 cloud_msg;
   pcl::toROSMsg(*out_cloud, cloud_msg);
